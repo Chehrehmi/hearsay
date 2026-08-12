@@ -1,0 +1,34 @@
+# Python Bytecode & Cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Environments
+.venv/
+venv/
+ENV/
+env/
+
+# Databases & Trace Storage
+*.db
+*.sqlite3
+hearsay_traces.db
+
+# Heavy Model Weights & Export Artifacts
+*.onnx
+*.bin
+*.pt
+*.safetensors
+models/
+
+# Testing & Coverage
+.coverage
+htmlcov/
+.pytest_cache/
+
+# IDE & OS Specific
+.DS_Store
+.vscode/
+.idea/
