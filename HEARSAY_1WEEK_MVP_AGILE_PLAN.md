@@ -59,7 +59,7 @@ In accordance with this directive, we are focusing 100% of our 1-Week MVP on **P
 └───────────────────────────────────────────────────────────────────────────────────┘
                                          │
                                          ▼
-┌───────────────────────────────────────────────────────────────────────────────────┐
+┌──────────────────────────────────────────────────────────────┴────────────────────┐
 |                        EVALUATION & OBSERVABILITY UI                              |
 |                            (Owners: Harry & Jeremy)                               |
 |                                                                                   |
@@ -72,7 +72,173 @@ In accordance with this directive, we are focusing 100% of our 1-Week MVP on **P
 
 ---
 
-## 3. Team Member Division of Labor & Daily Schedule
+## 3. GitHub Agile Workflow & Branching Strategy
+
+To operate like a professional software team, all 3 members must strictly follow our GitHub workflow protocol.
+
+```
+                          ┌──────────────────────────┐
+                          │   main (Stable / Demo)   │
+                          └─────────────▲────────────┘
+                                        │ PR (End of Day 7 / Tag v0.1.0)
+                          ┌─────────────┴────────────┐
+                          │   dev (Integration)      │
+                          └─────────────▲────────────┘
+                                        │ Continuous PRs (Days 1–5) + 1 Peer Approval
+           ┌────────────────────────────┼────────────────────────────┐
+           │                            │                            │
+ ┌─────────┴──────────┐       ┌─────────┴──────────┐       ┌─────────┴──────────┐
+ │ feat/engine-akhil  │       │  feat/eval-harry   │       │ feat/proxy-jeremy  │
+ └────────────────────┘       └────────────────────┘       └────────────────────┘
+```
+
+### 3.1 Golden Rules of Version Control
+1. 🛑 **NEVER push code directly to `main` or `dev`.** Pushing straight to `main` or `dev` breaks integration for everyone.
+2. 🛠️ **ALL development happens in individual feature branches**:
+   - Akhil: `feat/engine-akhil`
+   - Harry: `feat/eval-harry`
+   - Jeremy: `feat/proxy-jeremy`
+3. 🔀 **When to Merge to `dev`? (Merge Cadence)**:
+   - **DO NOT wait until Day 6 or Day 7 to merge to `dev`!** That creates "Integration Hell."
+   - **Days 1–5 (Continuous Incremental Merging)**: Merge completed sub-tasks to `dev` as soon as they pass unit tests (e.g., Akhil merges `decomposer.py` on Day 2; Harry merges `loader.py` on Day 1).
+   - **Day 6 (Code Freeze on `dev`)**: All feature branches MUST be fully merged into `dev` by the end of Day 5 / morning of Day 6. Day 6 is strictly for end-to-end integration testing, bug fixes, and benchmark execution on `dev`.
+   - **Day 7 (PR from `dev` -> `main`)**: After the Docker container and Streamlit demo pass on `dev`, Jeremy opens a final Pull Request from `dev` into `main`. All 3 members approve, merge, and tag `v0.1.0-mvp`.
+
+---
+
+### 3.2 Member-by-Member Setup & Daily Commands Guide
+
+#### 👤 For AKHIL (ML & Verification Engine)
+
+**Day 1 Initial Setup:**
+```bash
+# Clone repository
+git clone https://github.com/Chehrehmi/hearsay.git
+cd hearsay
+
+# Configure git credentials
+git config user.name "Akhil"
+git config user.email "akhil@example.com"
+
+# Setup virtual environment & dependencies
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python -m spacy download en_core_web_sm
+
+# Create and switch to your feature branch off dev
+git checkout dev
+git pull origin dev
+git checkout -b feat/engine-akhil
+git push -u origin feat/engine-akhil
+```
+
+**Daily Coding & Push Workflow (Days 1–5):**
+```bash
+# Always work inside feat/engine-akhil
+git status
+git add hearsay/engine/
+
+# Write a clean commit message
+git commit -m "feat(engine): add spaCy sentence decomposer in decomposer.py"
+
+# Push to your remote feature branch
+git push origin feat/engine-akhil
+
+# Open a Pull Request on GitHub: feat/engine-akhil -> dev
+# Ask Harry or Jeremy to review and approve!
+```
+
+**Syncing your branch with latest `dev` changes:**
+```bash
+# Keep your branch up to date with dev updates from teammates
+git checkout dev
+git pull origin dev
+git checkout feat/engine-akhil
+git merge dev
+```
+
+---
+
+#### 👤 For HARRY (Data Pipeline & RAGTruth Evaluation)
+
+**Day 1 Initial Setup:**
+```bash
+# Clone repository
+git clone https://github.com/Chehrehmi/hearsay.git
+cd hearsay
+
+# Configure git credentials
+git config user.name "Harry"
+git config user.email "harry@example.com"
+
+# Setup virtual environment & dependencies
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+
+# Create and switch to your feature branch off dev
+git checkout dev
+git pull origin dev
+git checkout -b feat/eval-harry
+git push -u origin feat/eval-harry
+```
+
+**Daily Coding & Push Workflow (Days 1–5):**
+```bash
+# Always work inside feat/eval-harry
+git status
+git add hearsay/dataset/ hearsay/eval/
+
+# Write a clean commit message
+git commit -m "feat(eval): implement RAGTruth span alignment logic in aligner.py"
+
+# Push to your remote feature branch
+git push origin feat/eval-harry
+
+# Open a Pull Request on GitHub: feat/eval-harry -> dev
+# Ask Akhil or Jeremy to review and approve!
+```
+
+---
+
+#### 👤 For JEREMY (Proxy Gateway, Trace DB & Dashboard)
+
+**Day 1 Initial Setup:**
+```bash
+# Repo is already cloned in /Users/jeremy/CUSAT/Hearsay-Project/hearsay
+cd /Users/jeremy/CUSAT/Hearsay-Project/hearsay
+
+# Configure git credentials
+git config user.name "Chehrehmi"
+git config user.email "jeremymathewjose@gmail.com"
+
+# Create and switch to your feature branch off dev
+git checkout dev
+git pull origin dev
+git checkout -b feat/proxy-jeremy
+git push -u origin feat/proxy-jeremy
+```
+
+**Daily Coding & Push Workflow (Days 1–5):**
+```bash
+# Always work inside feat/proxy-jeremy
+git status
+git add hearsay/proxy/ hearsay/db/ hearsay/ui/
+
+# Write a clean commit message
+git commit -m "feat(proxy): implement FastAPI /verify endpoint in gateway.py"
+
+# Push to your remote feature branch
+git push origin feat/proxy-jeremy
+
+# Open a Pull Request on GitHub: feat/proxy-jeremy -> dev
+# Ask Akhil or Harry to review and approve!
+```
+
+---
+
+## 4. Team Member Division of Labor & Daily Schedule
 
 Each team member works **5 hours per day for 7 days (Total: 35 hours / person)**.
 
@@ -88,23 +254,17 @@ Each team member works **5 hours per day for 7 days (Total: 35 hours / person)**
 - Build `hearsay/engine/verifier.py` to evaluate Premise-Hypothesis pairs using `cross-encoder/nli-deberta-v3-small` (PyTorch / ONNX INT8).
 - Build `hearsay/engine/pipeline.py` to expose a clean `HearsayEngine.verify(response, source_info)` API.
 
-#### Knowledge Required:
-- **spaCy / PySBD**: Sentence boundary detection (`en_core_web_sm`).
-- **Sentence-Transformers**: Cosine similarity search, embedding generation.
-- **HuggingFace & NLI**: Cross-Encoder architecture, logit interpretation ($P(\text{entailment}), P(\text{contradiction}), P(\text{neutral})$).
-- **ONNX Runtime (Optional/Day 5)**: Quantizing PyTorch models to INT8 for sub-100ms CPU execution.
-
 #### Daily Schedule & Hour Allocations (35 Hours Total):
 
-| Day | Hours | Tasks & Deliverables | Knowledge / Tools |
+| Day | Hours | Tasks & Deliverables | Merge Target |
 |---|---|---|---|
-| **Day 1** | 5h | Setup ML virtual environment (`uv` / `pip`), install `transformers`, `torch`, `spacy`, `sentence-transformers`. Prototype spaCy sentence segmentation. | Python, Virtualenv, spaCy |
-| **Day 2** | 5h | Develop `decomposer.py`. Add conjunction splitting (`and`, `but`, `;`) to extract atomic claims. Unit test with complex sentences. | spaCy rule-based matching |
-| **Day 3** | 5h | Develop `retriever.py`. Implement chunk chunking & `all-MiniLM-L6-v2` bi-encoder scoring. Return top-$k$ relevant source spans per claim. | PyTorch, Sentence-Transformers |
-| **Day 4** | 5h | Develop `verifier.py`. Load `cross-encoder/nli-deberta-v3-small`. Formulate (Premise=Source Chunk, Hypothesis=Claim). Convert logits to `Supported` / `Contradicted` / `Ungrounded` labels with confidence scores. | HuggingFace CrossEncoder |
-| **Day 5** | 5h | Assemble `pipeline.py`. Combine Decomposer → Retriever → Verifier into unified engine. Add PyTorch/ONNX quantization pipeline for low-latency CPU execution. | ONNX Runtime / PyTorch |
-| **Day 6** | 5h | Calibration & Edge Case Handling. Tune confidence threshold ($\tau = 0.65$). Handle edge cases (empty context, single-word claims, short sentences). | Threshold tuning, NumPy |
-| **Day 7** | 5h | Engine API documentation, unit tests (`test_engine.py`), team integration, and code freeze. | PyTest, Code Review |
+| **Day 1** | 5h | Setup ML virtual environment, install `transformers`, `torch`, `spacy`. Prototype spaCy sentence segmentation. | Branch `feat/engine-akhil` |
+| **Day 2** | 5h | Develop `decomposer.py`. Add conjunction splitting (`and`, `but`, `;`). PR to `dev`. | **PR -> `dev`** |
+| **Day 3** | 5h | Develop `retriever.py`. Implement chunk chunking & `all-MiniLM-L6-v2` bi-encoder scoring. PR to `dev`. | **PR -> `dev`** |
+| **Day 4** | 5h | Develop `verifier.py`. Load `nli-deberta-v3-small`. Formulate (Premise, Hypothesis) pairs. PR to `dev`. | **PR -> `dev`** |
+| **Day 5** | 5h | Assemble `pipeline.py`. Combine Decomposer → Retriever → Verifier. PR to `dev`. | **PR -> `dev` (Code Freeze)** |
+| **Day 6** | 5h | Integration Testing & Calibration on `dev`. Tune confidence threshold ($\tau = 0.65$). Handle edge cases. | On `dev` branch |
+| **Day 7** | 5h | Unit tests (`test_engine.py`), documentation, assist in final PR `dev` -> `main`. | **Merge `dev` -> `main`** |
 
 ---
 
@@ -118,23 +278,17 @@ Each team member works **5 hours per day for 7 days (Total: 35 hours / person)**
 - Build `hearsay/eval/metrics.py` to compute Precision, Recall, F1, Accuracy, and per-task breakdowns (QA MS MARCO, Summarization CNN/DM, Data-to-Text Yelp).
 - Build `hearsay/eval/benchmark_runner.py` CLI script to run evaluations over sample/full datasets and produce `benchmark_results.json` and Markdown summary tables.
 
-#### Knowledge Required:
-- **JSONL Parsing & Data Cleaning**: Python `json`, `pandas`.
-- **NLP Evaluation Metrics**: Confusion matrix, token/sentence-level Precision, Recall, F1-score (Scikit-Learn).
-- **RAGTruth Corpus Structure**: Understanding `source_id`, `labels`, `start`/`end` char offsets, `task_type`.
-- **Benchmarking Tools**: Latency profiling (`time.perf_counter`), memory tracking.
-
 #### Daily Schedule & Hour Allocations (35 Hours Total):
 
-| Day | Hours | Tasks & Deliverables | Knowledge / Tools |
+| Day | Hours | Tasks & Deliverables | Merge Target |
 |---|---|---|---|
-| **Day 1** | 5h | Inspect workspace dataset files `source_info.jsonl` and `response.jsonl`. Write `loader.py` to load and join responses with source context by `source_id`. | Pandas, JSONLines |
-| **Day 2** | 5h | Develop `aligner.py`. Build span-overlap logic: map RAGTruth character offset ranges (`start`, `end`) to spaCy sentence boundaries. | String offsets, Interval math |
-| **Day 3** | 5h | Develop `metrics.py`. Implement sentence-level Precision, Recall, F1 computation. Add ground truth binary label conversion (`labels != [] => Unsupported`). | Scikit-learn, Confusion Matrix |
-| **Day 4** | 5h | Develop `benchmark_runner.py`. Wire up Akhil's `HearsayEngine` to evaluate a batch of 100 RAGTruth samples. Generate raw predictions JSON. | CLI args, Logging |
-| **Day 5** | 5h | Execute full benchmark run (1,000+ instances). Compute per-task metrics (QA vs. Summarization vs. Data-to-Text). Record P50/P95 latency. | Data Analysis, Matplotlib |
-| **Day 6** | 5h | Error Analysis & Failure Mode Taxonomy. Identify top 10 false positives and false negatives. Generate markdown summary tables for report. | Error Analysis, Markdown |
-| **Day 7** | 5h | Final evaluation write-up, benchmark charts generation, code cleanup (`test_eval.py`), team integration. | Data Viz, Report Writing |
+| **Day 1** | 5h | Inspect dataset files `source_info.jsonl` and `response.jsonl`. Write `loader.py`. PR to `dev`. | **PR -> `dev`** |
+| **Day 2** | 5h | Develop `aligner.py`. Build span-overlap logic: map RAGTruth character offsets to sentence boundaries. PR to `dev`. | **PR -> `dev`** |
+| **Day 3** | 5h | Develop `metrics.py`. Implement sentence-level Precision, Recall, F1 computation. PR to `dev`. | **PR -> `dev`** |
+| **Day 4** | 5h | Develop `benchmark_runner.py`. Wire up Akhil's `HearsayEngine` to evaluate 100 RAGTruth samples. PR to `dev`. | **PR -> `dev`** |
+| **Day 5** | 5h | Execute full benchmark run (1,000+ instances). Compute per-task metrics (QA vs. Summary vs. Yelp). Record P50/P95 latency. | **PR -> `dev` (Code Freeze)** |
+| **Day 6** | 5h | Error Analysis & Failure Mode Taxonomy. Identify top 10 false positives/negatives. Generate summary tables. | On `dev` branch |
+| **Day 7** | 5h | Final evaluation write-up, benchmark charts generation, code cleanup (`test_eval.py`), assist in final `dev` -> `main` PR. | **Merge `dev` -> `main`** |
 
 ---
 
@@ -149,31 +303,25 @@ Each team member works **5 hours per day for 7 days (Total: 35 hours / person)**
 - Build `hearsay/ui/dashboard.py` (Streamlit app) showing side-by-side claim-to-evidence span highlighting (green for Supported, red for Contradicted, yellow for Ungrounded), confidence score pills, and retrieval telemetry.
 - Package the system with `Dockerfile` and `docker-compose.yml`.
 
-#### Knowledge Required:
-- **FastAPI & Pydantic**: Async request handling, middleware design, OpenAI API spec compatibility.
-- **SQLite / SQLAlchemy**: Embedded database schema design, JSON payload storage, query filters.
-- **Streamlit / Web UI**: HTML span highlighting, metric cards, reactive layout components.
-- **Docker Compose**: Single-command container deployment (`docker compose up`).
-
 #### Daily Schedule & Hour Allocations (35 Hours Total):
 
-| Day | Hours | Tasks & Deliverables | Knowledge / Tools |
+| Day | Hours | Tasks & Deliverables | Merge Target |
 |---|---|---|---|
-| **Day 1** | 5h | Project skeleton setup (`hearsay/` package layout). Build `protocol.py` Pydantic models for context payload & verification response. | FastAPI, Pydantic |
-| **Day 2** | 5h | Build `gateway.py` skeleton. Implement `/v1/chat/completions` reverse-proxy route and header/context parser (`verirag_context`). | FastAPI Async, HTTPX |
-| **Day 3** | 5h | Build `trace_store.py`. Implement SQLite DB schema (`requests`, `claims`, `verdicts`). Add async log writer methods. | SQLite3, SQL |
-| **Day 4** | 5h | Integrate Gateway with Akhil's `HearsayEngine`. Store full verification execution trace in SQLite DB on every API call. | Async Python, FastAPI |
-| **Day 5** | 5h | Build `dashboard.py` Streamlit UI. Implement interactive trace selector, claim list, and side-by-side evidence span highlighting. | Streamlit, HTML/CSS |
-| **Day 6** | 5h | Add telemetry & retrieval diagnostics panel to dashboard (P50/P95 latency graphs, groundedness distribution charts, unused chunk warnings). | Streamlit, Plotly |
-| **Day 7** | 5h | Create `Dockerfile` & `docker-compose.yml`. Write comprehensive `README.md`, record 2-minute demo video, final integration test. | Docker, Markdown, Video |
+| **Day 1** | 5h | Package skeleton setup (`hearsay/`). Build `protocol.py` Pydantic models. PR to `dev`. | **PR -> `dev`** |
+| **Day 2** | 5h | Build `gateway.py` skeleton. Implement `/v1/chat/completions` route & header parser. PR to `dev`. | **PR -> `dev`** |
+| **Day 3** | 5h | Build `trace_store.py`. Implement SQLite DB schema (`requests`, `claims`, `verdicts`). PR to `dev`. | **PR -> `dev`** |
+| **Day 4** | 5h | Integrate Gateway with Akhil's `HearsayEngine`. Store trace in SQLite DB on every API call. PR to `dev`. | **PR -> `dev`** |
+| **Day 5** | 5h | Build `dashboard.py` Streamlit UI. Implement interactive trace selector & evidence highlighting. PR to `dev`. | **PR -> `dev` (Code Freeze)** |
+| **Day 6** | 5h | Telemetry & retrieval diagnostics panel (P50/P95 latency graphs, unused chunk warnings). End-to-end testing on `dev`. | On `dev` branch |
+| **Day 7** | 5h | Create `Dockerfile` & `docker-compose.yml`. Final PR `dev` -> `main`, record 2-minute video demo. | **Merge `dev` -> `main`** |
 
 ---
 
-## 4. API Contracts & Data Specifications
+## 5. API Contracts & Data Specifications
 
 To allow all 3 team members to work concurrently without blocking each other, the data contracts between modules are frozen as follows:
 
-### 4.1 Request Protocol Contract (`hearsay/proxy/protocol.py`)
+### 5.1 Request Protocol Contract (`hearsay/proxy/protocol.py`)
 ```python
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
@@ -189,7 +337,7 @@ class VerificationRequest(BaseModel):
     verirag_context: Optional[ContextPayload] = None
 ```
 
-### 4.2 Engine Verification Verdict Contract (`hearsay/engine/pipeline.py`)
+### 5.2 Engine Verification Verdict Contract (`hearsay/engine/pipeline.py`)
 ```python
 class ClaimVerdict(BaseModel):
     claim_id: int
@@ -214,9 +362,9 @@ class VerificationResult(BaseModel):
 
 ---
 
-## 5. Step-by-Step Implementation Details for Each Team Member
+## 6. Step-by-Step Implementation Details for Each Team Member
 
-### 5.1 Akhil's Implementation Specs (`hearsay/engine`)
+### 6.1 Akhil's Implementation Specs (`hearsay/engine`)
 
 #### Step 1: `decomposer.py`
 ```python
@@ -285,7 +433,7 @@ class NLIClassifier:
 
 ---
 
-### 5.2 Harry's Implementation Specs (`hearsay/eval`)
+### 6.2 Harry's Implementation Specs (`hearsay/eval`)
 
 #### Step 1: `aligner.py` (RAGTruth Label Alignment)
 ```python
@@ -345,7 +493,7 @@ def compute_groundedness_metrics(y_true: list[int], y_pred: list[int]) -> dict:
 
 ---
 
-### 5.3 Jeremy's Implementation Specs (`hearsay/proxy` & `hearsay/ui`)
+### 6.3 Jeremy's Implementation Specs (`hearsay/proxy` & `hearsay/ui`)
 
 #### Step 1: `trace_store.py` (SQLite Database)
 ```python
@@ -436,22 +584,6 @@ else:
 
 ---
 
-## 6. Daily Scrum & Collaboration Workflow
-
-To ensure equal momentum and seamless integration across the 7 days:
-
-1. **Daily 15-Minute Async Check-in**:
-   - What did I complete yesterday?
-   - What will I complete today?
-   - Any blockers?
-2. **Git Branching Strategy**:
-   - `main`: Production-ready code (frozen on Day 7).
-   - `feat/engine-akhil`: Akhil's work on decomposer, retriever, verifier.
-   - `feat/eval-harry`: Harry's work on dataset loader, aligner, metrics.
-   - `feat/proxy-jeremy`: Jeremy's work on FastAPI gateway, SQLite DB, Streamlit dashboard.
-
----
-
 ## 7. Week 1 MVP Acceptance & Demo Checklist
 
 Before presenting to the guide on Day 7, verify all items:
@@ -462,14 +594,15 @@ Before presenting to the guide on Day 7, verify all items:
 - [ ] Jeremy's FastAPI proxy gateway responds to HTTP POST `/verify` and logs traces to `hearsay_traces.db`.
 - [ ] Streamlit dashboard launches via `streamlit run hearsay/ui/dashboard.py` and visually renders highlighted green/red/yellow claims.
 - [ ] Docker container builds cleanly with `docker compose up` and exposes the gateway on port `8000`.
+- [ ] Final PR opened from `dev` to `main`, peer reviewed by all 3 members, merged, and tagged `v0.1.0-mvp`.
 - [ ] 2-minute video walkthrough recorded demonstrating live verification of a hallucinated RAG sentence.
 
 ---
 
-## 8. Summary of Responsibilities
+## 8. Summary of Responsibilities & Branch Targets
 
-| Team Member | Module Ownership | Deliverables | Key Outcome |
-|---|---|---|---|
-| **Akhil** | Engine & ML | `decomposer.py`, `retriever.py`, `verifier.py`, `pipeline.py` | Sub-150ms local NLI verification engine |
-| **Harry** | Data & Evaluation | `loader.py`, `aligner.py`, `metrics.py`, `benchmark_runner.py` | Rigorous RAGTruth evaluation & performance metrics |
-| **Jeremy** | Proxy & UI | `protocol.py`, `gateway.py`, `trace_store.py`, `dashboard.py`, `docker-compose.yml` | OpenAI-compatible proxy, trace storage, & Streamlit dashboard |
+| Team Member | Module Ownership | Deliverables | Feature Branch | Merge Target |
+|---|---|---|---|---|
+| **Akhil** | Engine & ML | `decomposer.py`, `retriever.py`, `verifier.py`, `pipeline.py` | `feat/engine-akhil` | Daily PRs -> `dev` (Code freeze Day 5) |
+| **Harry** | Data & Evaluation | `loader.py`, `aligner.py`, `metrics.py`, `benchmark_runner.py` | `feat/eval-harry` | Daily PRs -> `dev` (Code freeze Day 5) |
+| **Jeremy** | Proxy & UI | `protocol.py`, `gateway.py`, `trace_store.py`, `dashboard.py`, `docker-compose.yml` | `feat/proxy-jeremy` | Daily PRs -> `dev` (Code freeze Day 5) |
