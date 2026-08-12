@@ -362,11 +362,13 @@ class VerificationResult(BaseModel):
 
 ---
 
-## 6. Step-by-Step Implementation Details for Each Team Member
+## 6. Complete Starter Templates for Each Team Member
 
-### 6.1 Akhil's Implementation Specs (`hearsay/engine`)
+Below are complete, copy-pasteable starter templates for every single file in the project.
 
-#### Step 1: `decomposer.py`
+### 6.1 Akhil's Implementation Files (`hearsay/engine/`)
+
+#### 📄 `hearsay/engine/decomposer.py`
 ```python
 import spacy
 import re
@@ -376,11 +378,12 @@ class ClaimDecomposer:
         self.nlp = spacy.load("en_core_web_sm")
 
     def decompose(self, text: str) -> list[str]:
+        """Decomposes response prose into discrete atomic sentence/clause claims."""
         doc = self.nlp(text)
         sentences = [sent.text.strip() for sent in doc.sents if len(sent.text.strip()) > 5]
         claims = []
         for sent in sentences:
-            # Sub-split long clauses on conjunctions if explicit subject & verb exist
+            # Sub-split long clauses on conjunctions if explicit clauses exist
             sub_clauses = re.split(r';|\b(?:and|but|whereas)\b', sent)
             for clause in sub_clauses:
                 cleaned = clause.strip()
@@ -389,7 +392,39 @@ class ClaimDecomposer:
         return claims if claims else [text]
 ```
 
-#### Step 2: `verifier.py`
+#### 📄 `hearsay/engine/retriever.py`
+```python
+from sentence_transformers import SentenceTransformer, util
+import spacy
+
+class BiEncoderRetriever:
+    def __init__(self, model_name: str = "all-MiniLM-L6-v2"):
+        self.model = SentenceTransformer(model_name)
+        self.nlp = spacy.load("en_core_web_sm")
+
+    def get_candidate_spans(self, source_info: str, claim: str, top_k: int = 3) -> list[dict]:
+        """Chunks source_info by sentence and ranks top-k candidate evidence spans by bi-encoder similarity."""
+        doc = self.nlp(source_info)
+        source_sentences = [sent.text.strip() for sent in doc.sents if len(sent.text.strip()) > 10]
+        if not source_sentences:
+            return [{"chunk": source_info, "score": 1.0}]
+            
+        claim_embedding = self.model.encode(claim, convert_to_tensor=True)
+        chunk_embeddings = self.model.encode(source_sentences, convert_to_tensor=True)
+        
+        scores = util.cos_sim(claim_embedding, chunk_embeddings)[0]
+        top_results = scores.topk(k=min(top_k, len(source_sentences)))
+        
+        candidates = []
+        for score, idx in zip(top_results.values, top_results.indices):
+            candidates.append({
+                "chunk": source_sentences[idx.item()],
+                "score": round(float(score.item()), 4)
+            })
+        return candidates
+```
+
+#### 📄 `hearsay/engine/verifier.py`
 ```python
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
@@ -401,12 +436,12 @@ class NLIClassifier:
         self.model.eval()
 
     def predict(self, premise: str, hypothesis: str) -> dict:
+        """Classifies Premise (Source Chunk) and Hypothesis (Claim) into Supported, Contradiction, or Ungrounded."""
         inputs = self.tokenizer(premise, hypothesis, return_tensors="pt", truncation=True, max_length=512)
         with torch.no_grad():
             logits = self.model(**inputs).logits.squeeze(0)
             probs = torch.softmax(logits, dim=-1).tolist()
         
-        # DeBERTa-v3 NLI mapping: 0=Contradiction, 1=Neutral, 2=Entailment (or check model.config.id2label)
         id2label = self.model.config.id2label
         probs_dict = {id2label[i].lower(): probs[i] for i in range(len(probs))}
         
@@ -431,20 +466,108 @@ class NLIClassifier:
         }
 ```
 
+#### 📄 `hearsay/engine/pipeline.py`
+```python
+import time
+import uuid
+from hearsay.engine.decomposer import ClaimDecomposer
+from hearsay.engine.retriever import BiEncoderRetriever
+from hearsay.engine.verifier import NLIClassifier
+
+class HearsayEngine:
+    def __init__(self):
+        self.decomposer = ClaimDecomposer()
+        self.retriever = BiEncoderRetriever()
+        self.verifier = NLIClassifier()
+
+    def verify(self, response_text: str, source_info: str) -> dict:
+        """Main end-to-end verification pipeline entrypoint."""
+        start_time = time.perf_counter()
+        claims = self.decomposer.decompose(response_text)
+        
+        verdicts = []
+        supported_count = 0
+        contradicted_count = 0
+        ungrounded_count = 0
+        
+        for idx, claim in enumerate(claims):
+            candidates = self.retriever.get_candidate_spans(source_info, claim, top_k=1)
+            best_evidence = candidates[0]["chunk"] if candidates else source_info
+            
+            nli_result = self.verifier.predict(premise=best_evidence, hypothesis=claim)
+            status = nli_result["status"]
+            
+            if status == "Supported":
+                supported_count += 1
+            elif "Contradiction" in status:
+                contradicted_count += 1
+            else:
+                ungrounded_count += 1
+                
+            verdicts.append({
+                "claim_id": idx,
+                "claim_text": claim,
+                "status": status,
+                "confidence": nli_result["confidence"],
+                "evidence_span": best_evidence,
+                "nli_logits": nli_result["logits"]
+            })
+            
+        elapsed_ms = round((time.perf_counter() - start_time) * 1000, 2)
+        total = len(claims)
+        groundedness_score = round((supported_count / total * 100.0) if total > 0 else 0.0, 2)
+        
+        return {
+            "request_id": str(uuid.uuid4())[:8],
+            "overall_status": "Verified" if ungrounded_count == 0 and contradicted_count == 0 else "Hallucination Detected",
+            "groundedness_score": groundedness_score,
+            "total_claims": total,
+            "supported_claims": supported_count,
+            "contradicted_claims": contradicted_count,
+            "ungrounded_claims": ungrounded_count,
+            "claims": verdicts,
+            "latency_ms": elapsed_ms
+        }
+```
+
 ---
 
-### 6.2 Harry's Implementation Specs (`hearsay/eval`)
+### 6.2 Harry's Implementation Files (`hearsay/dataset/` & `hearsay/eval/`)
 
-#### Step 1: `aligner.py` (RAGTruth Label Alignment)
+#### 📄 `hearsay/dataset/loader.py`
+```python
+import jsonlines
+import pandas as pd
+from pathlib import Path
+
+class RAGTruthLoader:
+    def __init__(self, data_dir: str = "data"):
+        self.data_dir = Path(data_dir)
+
+    def load_joined_dataset((self) -> pd.DataFrame:
+        """Loads source_info.jsonl and response.jsonl and joins them on source_id."""
+        sources = {}
+        with jsonlines.open(self.data_dir / "source_info.jsonl") as reader:
+            for obj in reader:
+                sources[obj["source_id"]] = obj
+
+        responses = []
+        with jsonlines.open(self.data_dir / "response.jsonl") as reader:
+            for obj in reader:
+                source_id = obj["source_id"]
+                if source_id in sources:
+                    joined = {**obj, "source_info": sources[source_id]["source_info"], "task_type": sources[source_id].get("task_type", "Unknown")}
+                    responses.append(joined)
+
+        return pd.DataFrame(responses)
+```
+
+#### 📄 `hearsay/eval/aligner.py`
 ```python
 class RAGTruthAligner:
     @staticmethod
     def align_sentence_labels(response_text: str, labels: list[dict], sentences: list[str]) -> list[dict]:
-        """
-        Maps RAGTruth character offset labels (start, end) to discrete sentence predictions.
-        If a sentence overlaps with an Evident/Subtle label, it is marked Ground Truth Unsupported (1).
-        Otherwise Supported (0).
-        """
+        """Maps RAGTruth character offset labels (start, end) to discrete sentence predictions."""
         sentence_targets = []
         current_offset = 0
         
@@ -455,7 +578,6 @@ class RAGTruthAligner:
             sent_end = sent_start + len(sent)
             current_offset = sent_end
             
-            # Check overlap with any RAGTruth hallucination label
             has_hallucination = False
             label_type = "Supported"
             for lbl in labels:
@@ -474,15 +596,12 @@ class RAGTruthAligner:
         return sentence_targets
 ```
 
-#### Step 2: `metrics.py`
+#### 📄 `hearsay/eval/metrics.py`
 ```python
 from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
 
 def compute_groundedness_metrics(y_true: list[int], y_pred: list[int]) -> dict:
-    """
-    y_true: 1 for Unsupported/Hallucinated, 0 for Supported
-    y_pred: 1 for Unsupported/Hallucinated, 0 for Supported
-    """
+    """y_true: 1 for Unsupported/Hallucinated, 0 for Supported."""
     return {
         "precision": round(float(precision_score(y_true, y_pred, zero_division=0)), 4),
         "recall": round(float(recall_score(y_true, y_pred, zero_division=0)), 4),
@@ -491,11 +610,111 @@ def compute_groundedness_metrics(y_true: list[int], y_pred: list[int]) -> dict:
     }
 ```
 
+#### 📄 `hearsay/eval/benchmark_runner.py`
+```python
+import json
+import argparse
+from hearsay.dataset.loader import RAGTruthLoader
+from hearsay.eval.aligner import RAGTruthAligner
+from hearsay.eval.metrics import compute_groundedness_metrics
+from hearsay.engine.pipeline import HearsayEngine
+
+def run_benchmark(sample_limit: int = 100):
+    print(f"🚀 Running Hearsay RAGTruth Benchmark on {sample_limit} instances...")
+    loader = RAGTruthLoader()
+    df = loader.load_joined_dataset().head(sample_limit)
+    engine = HearsayEngine()
+    
+    y_true = []
+    y_pred = []
+    latencies = []
+    
+    for idx, row in df.iterrows():
+        response_text = row["response"]
+        source_info = row["source_info"]
+        labels = row["labels"]
+        
+        result = engine.verify(response_text, source_info)
+        latencies.append(result["latency_ms"])
+        
+        sentences = [c["claim_text"] for c in result["claims"]]
+        aligned = RAGTruthAligner.align_sentence_labels(response_text, labels, sentences)
+        
+        for item, verdict in zip(aligned, result["claims"]):
+            y_true.append(item["is_hallucination"])
+            pred_val = 0 if verdict["status"] == "Supported" else 1
+            y_pred.append(pred_val)
+            
+    metrics = compute_groundedness_metrics(y_true, y_pred)
+    avg_latency = round(sum(latencies) / len(latencies), 2) if latencies else 0
+    
+    summary = {
+        "samples_evaluated": len(df),
+        "total_sentences": len(y_true),
+        "metrics": metrics,
+        "avg_latency_ms": avg_latency
+    }
+    
+    print("\n================ BENCHMARK RESULTS ================")
+    print(json.dumps(summary, indent=2))
+    print("===================================================\n")
+    
+    with open("benchmark_results.json", "w") as f:
+        json.dump(summary, f, indent=2)
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--limit", type=int, default=50, help="Number of RAGTruth samples to evaluate")
+    args = parser.parse_args()
+    run_benchmark(sample_limit=args.limit)
+```
+
 ---
 
-### 6.3 Jeremy's Implementation Specs (`hearsay/proxy` & `hearsay/ui`)
+### 6.3 Jeremy's Implementation Files (`hearsay/proxy/`, `hearsay/db/`, `hearsay/ui/`)
 
-#### Step 1: `trace_store.py` (SQLite Database)
+#### 📄 `hearsay/proxy/protocol.py`
+```python
+from pydantic import BaseModel
+from typing import List, Optional, Dict
+
+class ContextPayload(BaseModel):
+    source_id: str
+    source_info: str
+
+class VerificationRequest(BaseModel):
+    model: str = "gpt-3.5-turbo"
+    messages: List[Dict[str, str]]
+    response_text: Optional[str] = None
+    verirag_context: Optional[ContextPayload] = None
+```
+
+#### 📄 `hearsay/proxy/gateway.py`
+```python
+from fastapi import FastAPI, HTTPException
+from hearsay.proxy.protocol import VerificationRequest
+from hearsay.engine.pipeline import HearsayEngine
+from hearsay.db.trace_store import TraceStore
+
+app = FastAPI(title="Hearsay Gateway API", version="0.1.0-mvp")
+engine = HearsayEngine()
+db = TraceStore()
+
+@app.post("/verify")
+async def verify_response(req: VerificationRequest):
+    if not req.response_text or not req.verirag_context:
+        raise HTTPException(status_code=400, detail="response_text and verirag_context are required.")
+        
+    result = engine.verify(req.response_text, req.verirag_context.source_info)
+    db.log_trace(result, req.response_text, req.verirag_context.source_id)
+    return result
+
+@app.get("/health")
+async def health():
+    return {"status": "healthy", "service": "hearsay-gateway"}
+```
+
+#### 📄 `hearsay/db/trace_store.py`
 ```python
 import sqlite3
 import json
@@ -539,7 +758,7 @@ class TraceStore:
             ))
 ```
 
-#### Step 2: `dashboard.py` (Streamlit UI)
+#### 📄 `hearsay/ui/dashboard.py`
 ```python
 import streamlit as st
 import sqlite3
