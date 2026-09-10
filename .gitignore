@@ -32,3 +32,8 @@ htmlcov/
 .DS_Store
 .vscode/
 .idea/
+
+# Build & Distribution Artifacts
+*.egg-info/
+build/
+dist/
