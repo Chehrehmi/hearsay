@@ -33,5 +33,7 @@ htmlcov/
 .vscode/
 .idea/
 
-
-*.egg-info
+# Build & Distribution Artifacts
+*.egg-info/
+build/
+dist/
