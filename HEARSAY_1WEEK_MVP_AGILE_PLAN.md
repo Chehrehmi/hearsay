@@ -104,6 +104,29 @@ To operate like a professional software team, all 3 members must strictly follow
    - **Day 6 (Code Freeze on `dev`)**: All feature branches MUST be fully merged into `dev` by the end of Day 5 / morning of Day 6. Day 6 is strictly for end-to-end integration testing, bug fixes, and benchmark execution on `dev`.
    - **Day 7 (PR from `dev` -> `main`)**: After the Docker container and Streamlit demo pass on `dev`, Jeremy opens a final Pull Request from `dev` into `main`. All 3 members approve, merge, and tag `v0.1.0-mvp`.
 
+### 3.1.1 Enforced GitHub Branch Protection Rulesets
+To programmatically enforce the Golden Rules and protect the repository against accidental destructive operations, active GitHub Rulesets are configured:
+* **Ruleset Name:** `Protect Main`
+* **Enforcement Status:** `Active`
+* **Protected Target Branches:** `main` (Production/Demo) and `dev` (Active Integration)
+* **Enforced Governance Policies:**
+  - 🔒 **Block Force Pushes:** Enabled — prevents destructive `git push --force` or history rewriting on integration branches.
+  - 🛡️ **Restrict Deletions:** Enabled — prevents accidental branch deletion of `main` or `dev`.
+  - 👥 **Require Pull Request Before Merging:** Enabled — direct pushes to `main` and `dev` are rejected; all changes must pass through a Pull Request.
+  - 📝 **Required Approvals:** Minimum **1 peer review approval** required before PR merge.
+  - 🔀 **Allowed Merge Methods:** Merge commit, Squash and merge, Rebase and merge.
+  - 👑 **Bypass Rights:** Repository Admin (`Chehrehmi` / Repository Admin Role) has emergency bypass privileges for lead deployment or emergency hotfixes.
+
+### 3.1.2 Day 1 Milestone Integration Record (Status: COMPLETE ✅)
+Both Day 1 PRs have been code-reviewed, tested with 100% test coverage, and merged into `dev`:
+* ✅ **PR #1 (Harry - Data Pipeline)**: Branch `pr/day1-harry` merged into `dev` (Merge Commit `d8ec0c6`).
+  - **Delivered:** `hearsay/dataset/loader.py` (RAGTruth dataset ingestion joining 17,790 records on `source_id`, `load_joined_dataset() -> pd.DataFrame`, `load_as_dataframe()`, and public exports in `hearsay/dataset/__init__.py`).
+  - **Test Suite:** `tests/test_loader.py` (8/8 automated tests passed, 100% statement coverage).
+* ✅ **PR #2 (Jeremy - Architecture & Proxy)**: Branch `feat/proxy-jeremy` merged into `dev` (Merge Commit `7b4a039`).
+  - **Delivered:** `hearsay/proxy/protocol.py` (OpenAI-compatible request/response schemas, Pydantic v2 data models for claims/verdicts, and public exports in `hearsay/proxy/__init__.py`).
+  - **Test Suite:** `tests/test_protocol.py` (21/21 automated tests passed, 100% statement coverage).
+* 🧪 **Unified Integration Test Suite on `dev`**: **29/29 tests passing** (`pytest tests/ -v`).
+
 ---
 
 ### 3.2 Member-by-Member Setup & Daily Commands Guide
@@ -536,31 +559,69 @@ class HearsayEngine:
 
 #### 📄 `hearsay/dataset/loader.py`
 ```python
-import jsonlines
-import pandas as pd
+import json
 from pathlib import Path
+from typing import List, Dict, Any, Union
+import pandas as pd
 
 class RAGTruthLoader:
-    def __init__(self, data_dir: str = "data"):
+    """Loader and preprocessor for the RAGTruth benchmark dataset."""
+
+    def __init__(self, data_dir: Union[str, Path] = "data"):
         self.data_dir = Path(data_dir)
 
-    def load_joined_dataset((self) -> pd.DataFrame:
-        """Loads source_info.jsonl and response.jsonl and joins them on source_id."""
-        sources = {}
-        with jsonlines.open(self.data_dir / "source_info.jsonl") as reader:
-            for obj in reader:
-                sources[obj["source_id"]] = obj
+    def load_sources(self) -> List[Dict[str, Any]]:
+        source_file = self.data_dir / "source_info.jsonl"
+        sources = []
+        with open(source_file, "r", encoding="utf-8") as file:
+            for line in file:
+                if line.strip():
+                    sources.append(json.loads(line))
+        return sources
 
+    def load_responses(self) -> List[Dict[str, Any]]:
+        response_file = self.data_dir / "response.jsonl"
         responses = []
-        with jsonlines.open(self.data_dir / "response.jsonl") as reader:
-            for obj in reader:
-                source_id = obj["source_id"]
-                if source_id in sources:
-                    joined = {**obj, "source_info": sources[source_id]["source_info"], "task_type": sources[source_id].get("task_type", "Unknown")}
-                    responses.append(joined)
+        with open(response_file, "r", encoding="utf-8") as file:
+            for line in file:
+                if line.strip():
+                    responses.append(json.loads(line))
+        return responses
 
-        return pd.DataFrame(responses)
+    def load(self) -> List[Dict[str, Any]]:
+        sources = self.load_sources()
+        responses = self.load_responses()
+        source_map = {source["source_id"]: source for source in sources}
+        dataset = []
+
+        for response in responses:
+            source = source_map.get(response["source_id"])
+            if source is not None:
+                dataset.append({
+                    "id": response["id"],
+                    "source_id": response["source_id"],
+                    "model": response["model"],
+                    "temperature": response["temperature"],
+                    "split": response["split"],
+                    "quality": response["quality"],
+                    "task_type": source.get("task_type", "Unknown"),
+                    "source": source["source"],
+                    "source_info": source["source_info"],
+                    "prompt": source["prompt"],
+                    "response": response["response"],
+                    "labels": response["labels"],
+                })
+        return dataset
+
+    def load_joined_dataset(self) -> pd.DataFrame:
+        """Loads and joins sources and responses into a pandas DataFrame."""
+        return pd.DataFrame(self.load())
+
+    def load_as_dataframe(self) -> pd.DataFrame:
+        """Convenience alias for load_joined_dataset()."""
+        return self.load_joined_dataset()
 ```
+
 
 #### 📄 `hearsay/eval/aligner.py`
 ```python
