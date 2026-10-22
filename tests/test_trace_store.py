@@ -188,3 +188,40 @@ def test_clear_traces(store, sample_result):
     deleted = store.clear_traces()
     assert deleted == 1
     assert len(store.get_recent_traces()) == 0
+
+
+def test_latency_percentiles(store, sample_result):
+    """Tests P50, P90, P95, P99 percentile calculations."""
+    # Empty DB
+    empty_p = store.get_latency_percentiles()
+    assert empty_p["p50"] == 0.0
+    assert empty_p["p95"] == 0.0
+    assert empty_p["count"] == 0
+
+    # Log 5 traces with latencies: 10, 20, 30, 40, 50 ms
+    for lat in [10.0, 20.0, 30.0, 40.0, 50.0]:
+        t = {
+            "request_id": f"req-lat-{lat}",
+            "overall_status": "Verified",
+            "groundedness_score": 100.0,
+            "total_claims": 1,
+            "supported_claims": 1,
+            "contradicted_claims": 0,
+            "ungrounded_claims": 0,
+            "claims": [],
+            "latency_ms": lat,
+        }
+        store.log_trace(t, "Sample", "doc_1")
+
+    p = store.get_latency_percentiles()
+    assert p["count"] == 5
+    assert p["p50"] == 30.0   # Median
+    assert p["p90"] == 46.0   # 90th percentile
+    assert p["p95"] == 48.0   # 95th percentile
+    assert p["p99"] == 49.6   # 99th percentile
+
+    summary = store.get_metrics_summary()
+    assert summary["p50_latency_ms"] == 30.0
+    assert summary["p95_latency_ms"] == 48.0
+
+
