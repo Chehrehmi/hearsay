@@ -1,8 +1,22 @@
 import pytest
 from fastapi.testclient import TestClient
-from hearsay.proxy.gateway import app
+from hearsay.proxy.gateway import app, get_trace_store
+from hearsay.db import TraceStore
 
-client=TestClient(app)
+
+
+@pytest.fixture(autouse=True)
+def test_db(tmp_path):
+    """
+    Overrides the FastAPI get_trace_store dependency with an isolated,
+    temporary SQLite database for every test.
+    """
+    db_file = tmp_path / "test_gateway_traces.db"
+    store = TraceStore(db_path=db_file)
+    app.dependency_overrides[get_trace_store] = lambda: store
+    yield store
+    app.dependency_overrides.clear()
+client = TestClient(app)
 
 
 def test_health_endpoint():
@@ -165,3 +179,142 @@ def test_verify_with_legacy_verirag_headers():
     assert response.status_code == 200
     assert response.json()["overall_status"] == "Verified"
     assert response.json()["claims"][0]["source_chunk_id"] == "legacy_doc"
+
+
+def test_verify_logs_trace_to_db(test_db):
+    response = client.post(
+        "/verify",
+        json={
+            "response_text": "The Moon orbits the Earth.",
+            "verirag_context": {
+                "source_info": "The Moon orbits the Earth.",
+                "source_id": "space_doc_1",
+            },
+        },
+    )
+    assert response.status_code == 200
+    req_id = response.json()["request_id"]
+
+    # Verify trace persisted in SQLite
+    trace = test_db.get_trace(req_id)
+    assert trace is not None
+    assert trace["request_id"] == req_id
+    assert trace["overall_status"] == "Verified"
+    assert trace["groundedness_score"] == 100.0
+
+
+def test_chat_completions_logs_trace_to_db(test_db):
+    response = client.post(
+        "/v1/chat/completions",
+        headers={
+            "X-Hearsay-Context": "Water freezes at 0 degrees Celsius.",
+            "X-Hearsay-Source-ID": "science_doc",
+        },
+        json={
+            "model": "gpt-4",
+            "messages": [{"role": "user", "content": "When does water freeze?"}],
+            "response_text": "Water freezes at 0 degrees Celsius.",
+        },
+    )
+    assert response.status_code == 200
+    req_id = response.headers["X-Hearsay-Request-ID"]
+
+    # Verify trace persisted in SQLite
+    trace = test_db.get_trace(req_id)
+    assert trace is not None
+    assert trace["overall_status"] == "Verified"
+
+
+def test_get_traces_endpoint_pagination_and_filter():
+    # Seed 1 Verified and 1 Hallucinated trace
+    client.post(
+        "/verify",
+        json={
+            "response_text": "Python is a programming language.",
+            "verirag_context": {
+                "source_info": "Python is a programming language.",
+                "source_id": "doc_1",
+            },
+        },
+    )
+    client.post(
+        "/verify",
+        json={
+            "response_text": "Python was created in 2050.",
+            "verirag_context": {
+                "source_info": "Python was created in 1991.",
+                "source_id": "doc_2",
+            },
+        },
+    )
+
+    # 1. Fetch all traces
+    res_all = client.get("/v1/traces")
+    assert res_all.status_code == 200
+    traces = res_all.json()
+    assert len(traces) == 2
+
+    # 2. Test pagination limit
+    res_limit = client.get("/v1/traces?limit=1")
+    assert res_limit.status_code == 200
+    assert len(res_limit.json()) == 1
+
+    # 3. Test status filter
+    res_filtered = client.get("/v1/traces?status_filter=Verified")
+    assert res_filtered.status_code == 200
+    filtered_traces = res_filtered.json()
+    assert len(filtered_traces) == 1
+    assert filtered_traces[0]["overall_status"] == "Verified"
+
+
+def test_get_trace_by_id_success_and_404():
+    # Create a verification trace
+    post_res = client.post(
+        "/verify",
+        json={
+            "response_text": "Gravity pulls objects downward.",
+            "verirag_context": {
+                "source_info": "Gravity pulls objects downward.",
+                "source_id": "physics_doc",
+            },
+        },
+    )
+    req_id = post_res.json()["request_id"]
+
+    # Test 200 OK on existing ID
+    get_res = client.get(f"/v1/traces/{req_id}")
+    assert get_res.status_code == 200
+    assert get_res.json()["request_id"] == req_id
+    assert "result" in get_res.json()
+
+    # Test 404 Not Found on nonexistent ID
+    missing_res = client.get("/v1/traces/nonexistent-id-999")
+    assert missing_res.status_code == 404
+    assert "not found" in missing_res.json()["detail"].lower()
+
+
+def test_get_metrics_endpoint():
+    # Initially empty metrics
+    res_initial = client.get("/v1/metrics")
+    assert res_initial.status_code == 200
+    assert res_initial.json()["total_requests"] == 0
+
+    # Log 1 verified request
+    client.post(
+        "/verify",
+        json={
+            "response_text": "The Sun is a star.",
+            "verirag_context": {
+                "source_info": "The Sun is a star.",
+                "source_id": "astro_doc",
+            },
+        },
+    )
+
+    # Metrics should now reflect 1 request
+    res_after = client.get("/v1/metrics")
+    assert res_after.status_code == 200
+    metrics = res_after.json()
+    assert metrics["total_requests"] == 1
+    assert metrics["total_verified"] == 1
+    assert metrics["verification_pass_rate"] == 100.0
