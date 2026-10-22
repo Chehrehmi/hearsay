@@ -6,6 +6,7 @@ WORKDIR /app
 # Prevent Python from writing .pyc files and enable unbuffered logging
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
     STREAMLIT_SERVER_PORT=8501 \
     STREAMLIT_SERVER_ADDRESS=0.0.0.0 \
     STREAMLIT_SERVER_HEADLESS=true \
@@ -32,7 +33,7 @@ RUN python -m spacy download en_core_web_sm
 COPY . .
 
 # Install hearsay in editable mode so imports resolve cleanly
-RUN pip install --no-cache-dir -e .
+# RUN pip install --no-cache-dir -e .
 
 # Expose Gateway (8000) and Dashboard (8501)
 EXPOSE 8000 8501
