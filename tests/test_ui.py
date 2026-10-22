@@ -29,11 +29,13 @@ def test_dashboard_title_and_kpi_metrics():
     assert len(at.title) > 0
     assert "Hearsay" in at.title[0].value
 
-    # Verify all 5 top KPI metrics render
-    assert len(at.metric) >= 5
+    # Verify all 6 top KPI metrics render
+    assert len(at.metric) >= 6
     metric_labels = [m.label for m in at.metric]
     assert "Total Requests" in metric_labels
     assert "Pass Rate" in metric_labels
     assert "Avg Groundedness" in metric_labels
-    assert "Avg Latency" in metric_labels
+    assert "P50 Latency" in metric_labels
+    assert "P95 Latency" in metric_labels
     assert "Hallucinations Caught" in metric_labels
+

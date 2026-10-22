@@ -176,6 +176,8 @@ class TraceStore:
                 "verification_pass_rate": 0.0,
                 "avg_groundedness_score": 0.0,
                 "avg_latency_ms": 0.0,
+                "p50_latency_ms": 0.0,
+                "p95_latency_ms": 0.0,
                 "total_verified": 0,
                 "total_hallucinations": 0,
                 "total_claims": 0,
@@ -184,6 +186,7 @@ class TraceStore:
                 "total_ungrounded": 0,
             }
 
+        percentiles = self.get_latency_percentiles()
         total_req = int(row["total_requests"])
         total_ver = int(row["total_verified"] or 0)
         pass_rate = round((total_ver / total_req * 100.0), 2) if total_req > 0 else 0.0
@@ -193,6 +196,8 @@ class TraceStore:
             "verification_pass_rate": pass_rate,
             "avg_groundedness_score": round(float(row["avg_groundedness"]), 2),
             "avg_latency_ms": round(float(row["avg_latency_ms"]), 2),
+            "p50_latency_ms": percentiles["p50"],
+            "p95_latency_ms": percentiles["p95"],
             "total_verified": total_ver,
             "total_hallucinations": int(row["total_hallucinations"] or 0),
             "total_claims": int(row["total_claims"]),
@@ -200,6 +205,40 @@ class TraceStore:
             "total_contradicted": int(row["total_contradicted"]),
             "total_ungrounded": int(row["total_ungrounded"]),
         }
+
+
+    def get_latency_percentiles(self) -> Dict[str, float]:
+        """
+        Computes P50 (median), P90, P95, and P99 latency percentiles across stored traces.
+        Essential for detecting long-tail inference latency spikes in production RAG systems.
+        """
+        with self._get_connection() as conn:
+            rows = conn.execute(
+                "SELECT latency_ms FROM traces ORDER BY latency_ms ASC"
+            ).fetchall()
+
+        if not rows:
+            return {"p50": 0.0, "p90": 0.0, "p95": 0.0, "p99": 0.0, "count": 0}
+
+        latencies = [float(r["latency_ms"]) for r in rows]
+        n = len(latencies)
+
+        def _calc_percentile(p: float) -> float:
+            k = (n - 1) * (p / 100.0)
+            f = int(k)
+            c = f + 1
+            if c < n:
+                return round(latencies[f] + (k - f) * (latencies[c] - latencies[f]), 2)
+            return round(latencies[f], 2)
+
+        return {
+            "p50": _calc_percentile(50),
+            "p90": _calc_percentile(90),
+            "p95": _calc_percentile(95),
+            "p99": _calc_percentile(99),
+            "count": n,
+        }
+
 
     def clear_traces(self) -> int:
         """Deletes all traces from the table. Returns number of rows deleted."""

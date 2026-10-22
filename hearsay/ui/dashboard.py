@@ -87,7 +87,7 @@ st.caption("Sentence-level hallucination detection, claim-to-evidence alignment 
 # --- Top KPI Metrics Banner ---
 metrics = db.get_metrics_summary()
 
-kpi1, kpi2, kpi3, kpi4, kpi5 = st.columns(5)
+kpi1, kpi2, kpi3, kpi4, kpi5, kpi6 = st.columns(6)
 with kpi1:
     st.metric("Total Requests", f"{metrics['total_requests']}")
 with kpi2:
@@ -95,8 +95,10 @@ with kpi2:
 with kpi3:
     st.metric("Avg Groundedness", f"{metrics['avg_groundedness_score']}%")
 with kpi4:
-    st.metric("Avg Latency", f"{metrics['avg_latency_ms']} ms")
+    st.metric("P50 Latency", f"{metrics.get('p50_latency_ms', metrics['avg_latency_ms'])} ms")
 with kpi5:
+    st.metric("P95 Latency", f"{metrics.get('p95_latency_ms', metrics['avg_latency_ms'])} ms")
+with kpi6:
     st.metric("Hallucinations Caught", f"{metrics['total_hallucinations']}")
 
 st.divider()
@@ -156,6 +158,26 @@ with tab_traces:
             m_col2.write(f"**Source Document ID:** `{trace['source_id']}`")
             m_col3.write(f"**Groundedness Score:** `{trace['groundedness_score']}%`")
             m_col4.write(f"**Latency:** `{trace['latency_ms']} ms`")
+
+                        # Retrieval Diagnostics & Context Utilization (Day 6 Feature)
+            st.markdown("#### 🎯 Retrieval Diagnostics & Context Utilization")
+            total_claims = trace.get("total_claims", 0)
+            supp_claims = trace.get("supported_claims", 0)
+            unground_claims = trace.get("ungrounded_claims", 0) + trace.get("contradicted_claims", 0)
+            utilization_rate = round((supp_claims / total_claims * 100), 1) if total_claims > 0 else 0.0
+
+            d_col1, d_col2 = st.columns([1, 3])
+            with d_col1:
+                st.metric("Context Utilization", f"{utilization_rate}%")
+            with d_col2:
+                if unground_claims == 0:
+                    st.success("✅ **Optimal Retrieval:** All claims were successfully grounded in retrieved source context.")
+                else:
+                    st.warning(
+                        f"⚠️ **Retrieval Gap Warning:** {unground_claims} claim(s) could not be grounded in source document "
+                        f"`{trace['source_id']}`. Consider expanding retriever top_k or chunk overlap."
+                    )
+
 
             # Model Response Text
             st.markdown("#### 💬 Model Generated Response")
@@ -283,3 +305,27 @@ with tab_analytics:
 
         if metrics["total_requests"] > 0:
             st.bar_chart(outcomes_df.set_index("Outcome"))
+
+    st.divider()
+    st.markdown("#### ⏱️ Gateway Latency Telemetry & Percentile Profile")
+    percentiles = db.get_latency_percentiles()
+    
+    p_col1, p_col2, p_col3, p_col4 = st.columns(4)
+    with p_col1:
+        st.metric("P50 (Median)", f"{percentiles['p50']} ms")
+    with p_col2:
+        st.metric("Avg Latency", f"{metrics['avg_latency_ms']} ms")
+    with p_col3:
+        st.metric("P95 (Tail Latency)", f"{percentiles['p95']} ms")
+    with p_col4:
+        st.metric("P99 (Extreme Spikes)", f"{percentiles['p99']} ms")
+
+    # Latency over time line chart
+    recent_traces_for_chart = db.get_recent_traces(limit=30)
+    if recent_traces_for_chart:
+        latency_df = pd.DataFrame([
+            {"Request": t["request_id"][:6], "Latency (ms)": t["latency_ms"]}
+            for t in reversed(recent_traces_for_chart)
+        ])
+        st.markdown("##### Request Latency Trend (Recent Requests)")
+        st.line_chart(latency_df.set_index("Request")["Latency (ms)"])
