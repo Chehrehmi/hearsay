@@ -173,8 +173,8 @@ def _execute_verification(response_text:str,context:ContextPayload)->Verificatio
     try:
         # pyrefly: ignore [missing-import]
         from hearsay.engine.pipeline import HearsayEngine
-        engine=HearsayEngine()
-        raw_result=engine.verify(response_text,context.source_info)
+        engine = HearsayEngine()
+        raw_result = engine.verify(response_text, context.source_info, source_id=context.source_id)
         return VerificationResult.model_validate(raw_result)
     except (ImportError,Exception):
         # Deterministic lightweight fallback for Day 2 testing:
