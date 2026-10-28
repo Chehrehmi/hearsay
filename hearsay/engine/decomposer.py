@@ -15,6 +15,8 @@ class ClaimDecomposer:
     Decomposes unstructured LLM response text into discrete, atomic claims.
     """
 
+    _shared_nlp: Optional[spacy.language.Language] = None
+
     def __init__(
         self,
         model_name: str = "en_core_web_sm",
@@ -30,7 +32,9 @@ class ClaimDecomposer:
         if nlp is not None:
             self.nlp = nlp
         else:
-            self.nlp = spacy.load(model_name)
+            if ClaimDecomposer._shared_nlp is None:
+                ClaimDecomposer._shared_nlp = spacy.load(model_name)
+            self.nlp = ClaimDecomposer._shared_nlp
 
     def decompose(self, text: str) -> List[str]:
         """

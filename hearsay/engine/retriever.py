@@ -16,6 +16,9 @@ class BiEncoderRetriever:
     using bi-encoder cosine similarity.
     """
 
+    _shared_model: Optional[SentenceTransformer] = None
+    _shared_nlp: Optional[spacy.language.Language] = None
+
     def __init__(
         self,
         model_name: str = "all-MiniLM-L6-v2",
@@ -31,8 +34,19 @@ class BiEncoderRetriever:
             nlp: Optional pre-loaded spaCy Language model instance (for testing/performance).
         """
         self.model_name = model_name
-        self.model = model if model is not None else SentenceTransformer(model_name)
-        self.nlp = nlp if nlp is not None else spacy.load("en_core_web_sm")
+        if model is not None:
+            self.model = model
+        else:
+            if BiEncoderRetriever._shared_model is None:
+                BiEncoderRetriever._shared_model = SentenceTransformer(model_name)
+            self.model = BiEncoderRetriever._shared_model
+
+        if nlp is not None:
+            self.nlp = nlp
+        else:
+            if BiEncoderRetriever._shared_nlp is None:
+                BiEncoderRetriever._shared_nlp = spacy.load("en_core_web_sm")
+            self.nlp = BiEncoderRetriever._shared_nlp
 
     def get_candidate_spans(
         self,
