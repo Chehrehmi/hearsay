@@ -149,7 +149,7 @@ export const SandboxView = ({ onVerificationSuccess }: SandboxViewProps) => {
                 <h3 className="font-serif text-lg font-semibold text-[#0C0C12]">Benchmark Presets</h3>
                 <p className="text-xs text-[#7A7870] mt-0.5">Select a preconfigured scenario to test contradiction catching</p>
               </div>
-              <span className="text-xs text-[#7A7870] font-mono">4 Scenarios</span>
+              <span className="text-xs text-[#7A7870] font-mono">{presets.length} Scenarios</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-4">
@@ -176,7 +176,7 @@ export const SandboxView = ({ onVerificationSuccess }: SandboxViewProps) => {
           </div>
 
           <div className="pt-4 mt-4 border-t border-[#F2EFE8] flex items-center justify-between text-xs text-[#7A7870]">
-            <span>Model: DeBERTa-v3-large</span>
+            <span>Model: DeBERTa-v3-small (Local CPU)</span>
             <span>Task: Sentence-level NLI entailment</span>
           </div>
         </article>

@@ -126,7 +126,7 @@ export const TraceExplorerView = ({ initialSearch = '' }: TraceExplorerViewProps
           </div>
 
           {/* Table Element */}
-          <div className="overflow-x-auto mt-2">
+          <div className="overflow-x-auto min-w-0 mt-2">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="text-[11px] font-medium text-[#8C887E] uppercase tracking-wider border-b border-[#F7F5F0]">
@@ -203,7 +203,7 @@ export const TraceExplorerView = ({ initialSearch = '' }: TraceExplorerViewProps
       {/* Slide-In Inspector Drawer */}
       {selectedTrace && (
         <div className="fixed inset-0 z-50 flex justify-end bg-black/30 backdrop-blur-xs">
-          <div className="w-full max-w-xl bg-white h-full shadow-2xl p-6 md:p-8 overflow-y-auto flex flex-col justify-between">
+          <div className="w-full max-w-xl bg-white h-full shadow-2xl p-6 md:p-8 overflow-y-auto overscroll-contain flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between pb-4 border-b border-[#F2EFE8]">
                 <div>

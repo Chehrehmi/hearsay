@@ -75,7 +75,7 @@ export function App() {
   return (
     <div className="p-3 md:p-6 lg:p-8 flex items-center justify-center min-h-screen">
       {/* RevenueX Porcelain Shell */}
-      <div className="dashboard-shell w-full max-w-[1580px] rounded-[38px] shadow-float overflow-hidden flex flex-col lg:flex-row min-h-[920px]">
+      <div className="dashboard-shell w-full max-w-[1580px] rounded-[38px] shadow-float overflow-hidden flex flex-col lg:flex-row min-h-[min(920px,calc(100dvh-2.5rem))] lg:min-h-[880px]">
         {/* Left Sidebar */}
         <aside className="w-full lg:w-[260px] xl:w-[280px] bg-[#E8E4DA]/60 border-r border-[#D9D4C7]/70 p-6 flex flex-col justify-between shrink-0">
           <div className="space-y-6">

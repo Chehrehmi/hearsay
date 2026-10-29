@@ -315,7 +315,7 @@ export function RAGCompanionView({ apiBase, onNavigateToTrace }: RAGCompanionVie
           </div>
 
           {/* Messages Container */}
-          <div className="flex-1 overflow-y-auto py-4 space-y-4 max-h-[460px] pr-1">
+          <div className="flex-1 overflow-y-auto overscroll-contain py-4 space-y-4 max-h-[460px] pr-1">
             {messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center p-8 text-[#7A7870] space-y-2">
                 <div className="w-10 h-10 rounded-full bg-[#E8E4DA]/50 flex items-center justify-center text-[#7A7870]">
@@ -456,7 +456,7 @@ export function RAGCompanionView({ apiBase, onNavigateToTrace }: RAGCompanionVie
               </p>
             </div>
           ) : (
-            <div className="space-y-4 flex-1 overflow-y-auto max-h-[520px] pr-1">
+            <div className="space-y-4 flex-1 overflow-y-auto overscroll-contain max-h-[520px] pr-1">
               {/* Telemetry Card */}
               <div className="bg-white border border-[#D9D4C7]/80 rounded-[18px] p-4 shadow-sm space-y-3">
                 <div className="flex items-center justify-between">

@@ -11,7 +11,7 @@ export const TelemetryKpiBar = ({ metrics, isOnline }: TelemetryKpiBarProps) => 
   const passRate = metrics?.verification_pass_rate ?? 0;
   const avgScore = metrics?.avg_groundedness_score ?? 0;
   const p50 = metrics?.p50_latency_ms ?? metrics?.avg_latency_ms ?? 0;
-  const p95 = metrics?.p95_latency_ms ?? (Number(p50) * 1.4).toFixed(0);
+  const p95 = metrics?.p95_latency_ms ?? metrics?.avg_latency_ms ?? p50;
   const hallucinations = metrics?.total_hallucinations ?? 0;
   const verifiedCount = metrics?.total_verified ?? 0;
 
