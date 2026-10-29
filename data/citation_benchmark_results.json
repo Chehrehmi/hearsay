@@ -1,0 +1,93 @@
+{
+  "benchmark": "ALCE (EMNLP 2023, Princeton NLP)",
+  "dataset_split": "ASQA GTR Top-100 Oracle",
+  "benchmark_date": "2026-10-29 16:49:21",
+  "samples_evaluated": 30,
+  "total_citations_evaluated": 75,
+  "valid_citations_supported": 2,
+  "mean_citation_precision": 1.6,
+  "mean_citation_recall": 1.6,
+  "elapsed_seconds": 6.61,
+  "sample_breakdown": [
+    {
+      "sample_id": "-7013890438520559398",
+      "question": "Who has the highest goals in world football?",
+      "total_claims": 2,
+      "citation_precision": 0.0,
+      "citation_recall": 0.0,
+      "overall_status": "Citation Hallucinations Flagged"
+    },
+    {
+      "sample_id": "7089015503030534342",
+      "question": "Who is the original artist of sound of silence?",
+      "total_claims": 4,
+      "citation_precision": 0.0,
+      "citation_recall": 0.0,
+      "overall_status": "Citation Hallucinations Flagged"
+    },
+    {
+      "sample_id": "8793099883447006698",
+      "question": "When was the first apple i phone made?",
+      "total_claims": 2,
+      "citation_precision": 0.0,
+      "citation_recall": 0.0,
+      "overall_status": "Citation Hallucinations Flagged"
+    },
+    {
+      "sample_id": "-881464876144297194",
+      "question": "Who played the weasley brothers in harry potter?",
+      "total_claims": 5,
+      "citation_precision": 0.0,
+      "citation_recall": 0.0,
+      "overall_status": "Citation Hallucinations Flagged"
+    },
+    {
+      "sample_id": "1650309494326541834",
+      "question": "How many state parks are there in virginia?",
+      "total_claims": 2,
+      "citation_precision": 0.0,
+      "citation_recall": 0.0,
+      "overall_status": "Citation Hallucinations Flagged"
+    },
+    {
+      "sample_id": "2378678654868379935",
+      "question": "Who performed at the champions league final 2018?",
+      "total_claims": 5,
+      "citation_precision": 0.0,
+      "citation_recall": 0.0,
+      "overall_status": "Citation Hallucinations Flagged"
+    },
+    {
+      "sample_id": "-3322598412088356524",
+      "question": "Who killed the man in thelma and louise?",
+      "total_claims": 1,
+      "citation_precision": 0.0,
+      "citation_recall": 0.0,
+      "overall_status": "Citation Hallucinations Flagged"
+    },
+    {
+      "sample_id": "-4633355453516911545",
+      "question": "Who plays charlie on it's always sunny?",
+      "total_claims": 1,
+      "citation_precision": 0.0,
+      "citation_recall": 0.0,
+      "overall_status": "Citation Hallucinations Flagged"
+    },
+    {
+      "sample_id": "-7464414779466400769",
+      "question": "How many times have the lakers won the finals?",
+      "total_claims": 3,
+      "citation_precision": 0.0,
+      "citation_recall": 0.0,
+      "overall_status": "Citation Hallucinations Flagged"
+    },
+    {
+      "sample_id": "1562758409663917015",
+      "question": "How many states in india are under congress?",
+      "total_claims": 1,
+      "citation_precision": 0.0,
+      "citation_recall": 0.0,
+      "overall_status": "Citation Hallucinations Flagged"
+    }
+  ]
+}

@@ -5,7 +5,7 @@ hearsay.proxy.protocol: Universal Pydantic data schemes for Hearsay verification
 
 
 
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 
 class ContextPayload(BaseModel):
@@ -18,7 +18,9 @@ class VerificationRequest(BaseModel):
     model: str = Field(default="gpt-3.5-turbo",description="Target model name")
     messages: List[Dict[str,str]] = Field(default_factory=list,description="OpenAI-format coversation history")
     response_text: Optional[str] = Field(default=None, description="Pre-generated LLM response to verify")
-    verirag_context: Optional[ContextPayload] = Field(default=None,description="Retrieved context document payload")
+    response: Optional[str] = Field(default=None, description="Alternative field name for response_text")
+    verirag_context: Optional[ContextPayload] = Field(default=None, description="Retrieved context document payload")
+    context: Optional[Any] = Field(default=None, description="Alternative payload for context documents")
 
 class ClaimVerdict(BaseModel):
     """ Verification verdict for a single decomposed sentence/claim."""

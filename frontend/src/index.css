@@ -1,0 +1,192 @@
+/* hallmark: 2.0.0 | genre: modern-minimal | theme: revenuex-porcelain | job: runtime-verification */
+/* critique: enterprise verification dashboard with warm desert dunes backdrop, Source Serif 4 headlines, segmented micro-bars, and zero emojis */
+
+:root {
+  /* Typography */
+  --font-serif: 'Source Serif 4', Georgia, serif;
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Palette - RevenueX High-End Porcelain & Desert Dune */
+  --bg-dune: #d8cfc4;
+  --brand-dark: #0C0C12;
+  --brand-cream: #ECEAE3;
+  --brand-sidebar: #E8E4DA;
+  --brand-card: #FFFFFF;
+  --brand-neon: #91FE00;
+  --brand-purple: #BD47F2;
+  --brand-pink: #FC96FF;
+  --brand-rose: #E11D48;
+  --brand-amber: #D97706;
+  --brand-emerald: #059669;
+  
+  /* Text */
+  --text-primary: #0C0C12;
+  --text-secondary: #47453F;
+  --text-muted: #7A7870;
+  --text-faint: #9E9B92;
+
+  /* Borders & Shadows */
+  --border-light: rgba(12, 12, 18, 0.06);
+  --border-subtle: #E2DFD7;
+  --border-sidebar: rgba(217, 212, 199, 0.7);
+
+  --shadow-card: 0 10px 30px -10px rgba(12, 12, 18, 0.05), 0 4px 6px -2px rgba(12, 12, 18, 0.02);
+  --shadow-pill: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-float: 0 20px 45px rgba(25, 20, 10, 0.12);
+
+  /* Concentric Radii */
+  --radius-shell: 36px;
+  --radius-card: 28px;
+  --radius-inner: 18px;
+  --radius-pill: 9999px;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow-x: clip;
+  font-family: var(--font-sans);
+  background-color: var(--bg-dune);
+  background-image: 
+    radial-gradient(at 15% 15%, rgba(247, 198, 120, 0.45) 0px, transparent 50%),
+    radial-gradient(at 85% 85%, rgba(204, 150, 95, 0.35) 0px, transparent 55%),
+    radial-gradient(at 50% 50%, rgba(230, 219, 203, 0.8) 0px, transparent 100%);
+  min-height: 100vh;
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Universal SVG constraints to prevent explosion */
+svg {
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+  box-sizing: content-box;
+}
+svg:not([width]) {
+  max-width: 24px;
+  max-height: 24px;
+}
+
+/* Button & Input Base Resets */
+button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  text-align: inherit;
+  padding: 0;
+  margin: 0;
+}
+input, textarea {
+  font-family: inherit;
+  box-sizing: border-box;
+}
+
+/* Base Headings in Serif */
+h1, h2, h3, .font-serif {
+  font-family: var(--font-serif);
+}
+
+/* RevenueX App Shell */
+.dashboard-shell {
+  background: linear-gradient(135deg, rgba(237, 233, 224, 0.94) 0%, rgba(232, 228, 218, 0.96) 100%);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  box-shadow: var(--shadow-float);
+  border-radius: var(--radius-shell);
+}
+
+/* RevenueX Warm Radiant Hero Card */
+.hero-banner-gradient {
+  background: linear-gradient(135deg, #FDE68A 0%, #F59E0B 40%, #EAB308 70%, #FDE047 100%);
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(245, 158, 11, 0.3);
+}
+.hero-banner-gradient::before {
+  content: "";
+  position: absolute;
+  inset: -50%;
+  background: radial-gradient(circle at 60% 40%, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0) 50%);
+  transform: rotate(-15deg);
+  pointer-events: none;
+}
+
+/* Clean White Card */
+.rx-card {
+  background-color: var(--brand-card);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--border-light);
+}
+
+/* Pill Badges */
+.rx-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 500;
+  box-shadow: var(--shadow-pill);
+  background-color: #FFFFFF;
+  color: var(--text-primary);
+  border: 1px solid var(--border-light);
+}
+
+/* Active Navigation Pill */
+.nav-pill-active {
+  background-color: #FFFFFF;
+  color: var(--brand-dark);
+  box-shadow: var(--shadow-pill);
+  font-weight: 500;
+}
+.nav-pill-inactive {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+.nav-pill-inactive:hover {
+  color: var(--brand-dark);
+  background-color: rgba(255, 255, 255, 0.45);
+}
+
+/* Micro-press on buttons */
+button:not(:disabled):active {
+  transform: scale(0.96);
+  transition: transform 150ms ease;
+}
+
+/* Interactive Focus Visible */
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--brand-purple);
+  outline-offset: 2px;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(12, 12, 18, 0.15);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Reduced Motion Guard */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

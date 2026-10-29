@@ -37,3 +37,10 @@ htmlcov/
 *.egg-info/
 build/
 dist/
+
+# Evaluation Datasets & Local Corpora
+data/ALCE-data/
+nltk_data/
+
+# Internal Agent Configuration
+.agents/

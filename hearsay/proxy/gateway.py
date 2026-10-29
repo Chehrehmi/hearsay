@@ -6,10 +6,26 @@ from hearsay.proxy.protocol import VerificationRequest,VerificationResult,ClaimV
 from typing import Optional, Dict, Any, List
 from hearsay.db import TraceStore
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI(
     title="Hearsay Gateway API",
     version="0.1.0-mvp",
     description="OpenAI-compatible verification proxy for RAG groundedness"
+)
+
+# Enable CORS for browser frontend (React / Vite)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:8000",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:8000",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Default production database instance
@@ -34,13 +50,14 @@ async def verify_response(
     db: TraceStore = Depends(get_trace_store)
 ):
     # 1. Validate response_text
-    if not req.response_text or not req.response_text.strip():
-        raise HTTPException(status_code=400,detail="Field 'response_text' is required and cannot be empty.")
+    response_text = (req.response_text or req.response or "").strip()
+    if not response_text:
+        raise HTTPException(status_code=400, detail="Field 'response_text' is required and cannot be empty.")
     
 
 
     # 2. Extract Context (from body OR headers)
-    context = _extract_context(request,req.verirag_context)
+    context = _extract_context(request, req.verirag_context, req.context)
 
     if not context:
         raise HTTPException(
@@ -49,9 +66,9 @@ async def verify_response(
         )
 
     # 3. Execute Verification & return 
-    result = _execute_verification(req.response_text, context)
+    result = _execute_verification(response_text, context)
     # 4. Automatically log trace to audit store (Day 4 Feature)
-    db.log_trace(result, req.response_text, context.source_id)
+    db.log_trace(result, response_text, context.source_id)
     
     return result
 
@@ -164,20 +181,29 @@ async def get_metrics_summary(
     return db.get_metrics_summary()
 
 
+_engine_singleton = None
+
+def _get_engine():
+    global _engine_singleton
+    if _engine_singleton is None:
+        from hearsay.engine.pipeline import HearsayEngine
+        _engine_singleton = HearsayEngine()
+    return _engine_singleton
+
+
 def _execute_verification(response_text:str,context:ContextPayload)->VerificationResult:
     """
-    Executes verification using HearsayEngine if available, otherwise uses a deterministic fallback.
+    Executes verification using HearsayEngine singleton if available, otherwise uses a deterministic fallback.
     """
     start_time=time.perf_counter()
-    # Try using Akhil's engine if its installed/available
     try:
-        # pyrefly: ignore [missing-import]
-        from hearsay.engine.pipeline import HearsayEngine
-        engine = HearsayEngine()
+        engine = _get_engine()
         raw_result = engine.verify(response_text, context.source_info, source_id=context.source_id)
         return VerificationResult.model_validate(raw_result)
-    except (ImportError,Exception):
-        # Deterministic lightweight fallback for Day 2 testing:
+    except Exception as e:
+        import logging
+        logging.warning(f"HearsayEngine unavailable or error: {e}. Using deterministic fallback.")
+        # Deterministic lightweight fallback for Day 2 testing / offline testing:
         # Split into sentences ( by period)
         sentences=[s.strip() for s in response_text.split(".") if len(s.strip()) >3 ]
         if not sentences:
@@ -222,15 +248,34 @@ def _execute_verification(response_text:str,context:ContextPayload)->Verificatio
         )
 
 
-def _extract_context(request:Request, body_context:Optional[ContextPayload]=None)->Optional[ContextPayload]:
+def _extract_context(
+    request: Request,
+    body_context: Optional[ContextPayload] = None,
+    alt_context: Optional[Any] = None
+) -> Optional[ContextPayload]:
     """
     Extracts verification context from request body (Priority 1) 
                                    or 
     HTTP headers (Priority 2: X-Hearsay-Context / X-VeriRAG-Context).
     """
-    # 1. Check body
+    # 1. Check body (standard)
     if body_context and body_context.source_info.strip():
         return body_context
+
+    # 1b. Check body (list or dict fallback)
+    if alt_context:
+        if isinstance(alt_context, list) and len(alt_context) > 0:
+            first = alt_context[0]
+            if isinstance(first, dict):
+                s_id = str(first.get("id") or first.get("source_id") or "doc_user_input")
+                s_info = str(first.get("text") or first.get("source_info") or "").strip()
+                if s_info:
+                    return ContextPayload(source_id=s_id, source_info=s_info)
+        elif isinstance(alt_context, dict):
+            s_id = str(alt_context.get("id") or alt_context.get("source_id") or "doc_user_input")
+            s_info = str(alt_context.get("text") or alt_context.get("source_info") or "").strip()
+            if s_info:
+                return ContextPayload(source_id=s_id, source_info=s_info)
     
     # 2. Check HTTP headers
 
@@ -244,3 +289,13 @@ def _extract_context(request:Request, body_context:Optional[ContextPayload]=None
         return ContextPayload(source_id=source_id,source_info=header_context.strip())
 
     return None
+
+
+# Mount static React SPA if built
+import os
+from pathlib import Path
+from fastapi.staticfiles import StaticFiles
+
+frontend_dist = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
+if frontend_dist.exists():
+    app.mount("/", StaticFiles(directory=str(frontend_dist), html=True), name="frontend")
