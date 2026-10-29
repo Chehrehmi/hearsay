@@ -5,6 +5,8 @@ Evaluates (Premise, Hypothesis) pairs to verify claim groundedness
 using a local cross-encoder model (cross-encoder/nli-deberta-v3-small).
 """
 
+import os
+os.environ.setdefault("HF_HUB_OFFLINE", "1")
 from typing import Dict, Any, Optional
 import re
 import torch

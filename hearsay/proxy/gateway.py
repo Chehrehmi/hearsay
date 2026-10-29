@@ -1,4 +1,5 @@
 import os
+os.environ.setdefault("HF_HUB_OFFLINE", "1")
 import threading
 import uuid
 import time
@@ -6,6 +7,7 @@ from pathlib import Path
 from typing import Optional, Dict, Any, List
 from fastapi import FastAPI, HTTPException, Request, Response, Depends
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.concurrency import run_in_threadpool
 
 from hearsay.proxy import ContextPayload
 from hearsay.proxy.protocol import VerificationRequest, VerificationResult, ClaimVerdict
@@ -79,7 +81,7 @@ async def verify_response(
         )
 
     # 3. Execute Verification & return 
-    result = _execute_verification(response_text, context)
+    result = await run_in_threadpool(_execute_verification, response_text, context)
     # 4. Automatically log trace to audit store (Day 4 Feature)
     db.log_trace(result, response_text, context.source_id)
     
@@ -169,7 +171,7 @@ async def chat_completions(
     # 3. Perform verification if context is present
     verification = None
     if context:
-        verification = _execute_verification(generated_text, context)
+        verification = await run_in_threadpool(_execute_verification, generated_text, context)
         # Inject observability headers into HTTP response
         response.headers["X-Hearsay-Status"] = verification.overall_status
         response.headers["X-Hearsay-Score"] = str(verification.groundedness_score)

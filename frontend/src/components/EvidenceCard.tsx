@@ -19,20 +19,30 @@ export const EvidenceCard = ({ claim }: EvidenceCardProps) => {
     label = 'Contradicted';
   }
 
-  const confidencePct = (claim.confidence * 100).toFixed(1);
+  const normalize01 = (v: number | undefined | null): number => {
+    if (v == null || isNaN(Number(v))) return 0;
+    const n = Number(v);
+    return n > 1.0 ? Math.min(1.0, n / 100) : Math.max(0, n);
+  };
 
-  // Extract NLI logits if available
-  const entailmentVal = claim.nli_logits 
+  const confidenceNorm = normalize01(claim.confidence);
+  const confidencePct = (confidenceNorm * 100).toFixed(1);
+
+  // Extract NLI logits with defensive 0.0 - 1.0 normalization
+  const rawEntailment = claim.nli_logits 
     ? claim.nli_logits.entailment 
     : isSupported ? claim.confidence : (1 - claim.confidence) * 0.3;
+  const entailmentVal = normalize01(rawEntailment);
     
-  const contradictionVal = claim.nli_logits 
+  const rawContradiction = claim.nli_logits 
     ? claim.nli_logits.contradiction 
     : isContradicted ? claim.confidence : (1 - claim.confidence) * 0.3;
+  const contradictionVal = normalize01(rawContradiction);
     
-  const neutralVal = claim.nli_logits 
+  const rawNeutral = claim.nli_logits 
     ? claim.nli_logits.neutral 
     : (!isSupported && !isContradicted) ? claim.confidence : 0.05;
+  const neutralVal = normalize01(rawNeutral);
 
   return (
     <article className="rx-card p-5 md:p-6 mb-4 transition-shadow hover:shadow-md">
