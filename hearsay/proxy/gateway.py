@@ -83,6 +83,66 @@ async def verify_response(
     return result
 
 
+async def _generate_rag_completion(
+    messages: List[Dict[str, str]],
+    context: Optional[ContextPayload],
+    request: Request,
+) -> str:
+    """
+    Generates assistant completion either via live Gemini API (if key provided)
+    or via offline context extraction.
+    """
+    last_user_msg = messages[-1].get("content", "") if messages else "Summary request"
+    gemini_key = request.headers.get("x-gemini-key") or os.environ.get("GEMINI_API_KEY")
+
+    # 1. Live Gemini Generation (if API key available)
+    if gemini_key and gemini_key.strip():
+        try:
+            import json
+            import urllib.request
+            model_target = request.headers.get("x-gemini-model") or "gemini-2.5-flash"
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_target}:generateContent?key={gemini_key.strip()}"
+            
+            ctx_text = context.source_info if context else "No context provided."
+            prompt_payload = {
+                "contents": [
+                    {
+                        "parts": [
+                            {
+                                "text": (
+                                    f"System: You are an enterprise RAG assistant. Answer the user's question accurately "
+                                    f"using ONLY the following reference context.\n\n"
+                                    f"Context: {ctx_text}\n\n"
+                                    f"User Question: {last_user_msg}"
+                                )
+                            }
+                        ]
+                    }
+                ],
+                "generationConfig": {"temperature": 0.2, "maxOutputTokens": 300}
+            }
+            req_data = json.dumps(prompt_payload).encode("utf-8")
+            http_req = urllib.request.Request(url, data=req_data, headers={"Content-Type": "application/json"})
+            with urllib.request.urlopen(http_req, timeout=10) as resp:
+                result_json = json.loads(resp.read().decode("utf-8"))
+                candidates = result_json.get("candidates", [])
+                if candidates:
+                    parts = candidates[0].get("content", {}).get("parts", [])
+                    if parts and "text" in parts[0]:
+                        return parts[0]["text"].strip()
+        except Exception as e:
+            import logging
+            logging.warning(f"Upstream Gemini call failed ({e}). Falling back to offline extraction.")
+
+    # 2. Offline Extractive RAG Fallback (Zero network risk for Viva)
+    if context and context.source_info:
+        raw_sents = [s.strip() for s in context.source_info.split(".") if len(s.strip()) > 8]
+        if raw_sents:
+            return ". ".join(raw_sents[:2]) + "."
+
+    return f"Verified answer regarding: {last_user_msg}"
+
+
 @app.post("/v1/chat/completions")
 async def chat_completions(
     req: VerificationRequest,
@@ -90,17 +150,18 @@ async def chat_completions(
     response: Response,
     db: TraceStore = Depends(get_trace_store)
 ) -> Dict[str, Any]:
-    # 1. Determine assistant completion text
+    # 1. Extract context (from body or headers)
+    context = _extract_context(request, req.verirag_context, req.context)
+
+    # 2. Determine assistant completion text
     if req.response_text and req.response_text.strip():
         generated_text = req.response_text.strip()
+    elif req.response and req.response.strip():
+        generated_text = req.response.strip()
     elif req.messages:
-        last_user_msg = req.messages[-1].get("content", "")
-        generated_text = f"Verified answer regarding:{last_user_msg}"
+        generated_text = await _generate_rag_completion(req.messages, context, request)
     else:
         generated_text = "Hearsay proxy default response."
-    
-    # 2. Extract context (from body or headers)
-    context = _extract_context(request, req.verirag_context)
 
     # 3. Perform verification if context is present
     verification = None

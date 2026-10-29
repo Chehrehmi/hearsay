@@ -6,12 +6,23 @@ hearsay.proxy.protocol: Universal Pydantic data schemes for Hearsay verification
 
 
 from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 class ContextPayload(BaseModel):
     """Retrieved reference context/documents to verify LLM responses against."""
-    source_id: str = Field(..., description="Unique identifier for the source document or chunk")
-    source_info: str = Field(..., description="Raw text or concatenated chunks used as reference evidence")
+    source_id: str = Field(default="source_doc", description="Unique identifier for the source document or chunk")
+    source_info: str = Field(default="", description="Raw text or concatenated chunks used as reference evidence")
+    text: Optional[str] = Field(default=None, description="Alternative field name for source_info")
+
+    @model_validator(mode="before")
+    @classmethod
+    def populate_source_info(cls, values: Any) -> Any:
+        if isinstance(values, dict):
+            if not values.get("source_info") and values.get("text"):
+                values["source_info"] = values["text"]
+            if not values.get("source_id") and values.get("id"):
+                values["source_id"] = str(values["id"])
+        return values
 
 class VerificationRequest(BaseModel):
     """ Incoming request payload for /verify and OpenAI-compatible proxy endpoints. """
