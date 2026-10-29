@@ -44,3 +44,4 @@ nltk_data/
 
 # Internal Agent Configuration
 .agents/
+.superpowers/

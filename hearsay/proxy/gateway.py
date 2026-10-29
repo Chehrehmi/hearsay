@@ -43,6 +43,16 @@ async def health():
         "service":"hearsay-gateway"
     }
 
+
+@app.get("/v1/demo/corpus")
+async def get_demo_corpus():
+    """
+    Returns curated authentic benchmark scenarios from RAGTruth and ALCE
+    for live RAG demonstration.
+    """
+    from hearsay.demo.corpus import get_curated_rag_samples
+    return get_curated_rag_samples()
+
 @app.post("/verify",response_model=VerificationResult)
 async def verify_response(
     req: VerificationRequest, 
