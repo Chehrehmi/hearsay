@@ -14,12 +14,12 @@
 During the Week 1 Agile MVP, the team delivered an end-to-end, local, OpenAI-compatible proxy gateway and verification engine capable of sentence-level hallucination detection on uncited prose without requiring external LLM judge API calls.
 
 ### Sprint Goal Verification Checklist
-- [x] **Data Pipeline:** RAGTruth dataset ingestion joining 17,790 records on `source_id` ([loader.py](file:///c:/Users/DELL/Hearsay%20Pro/hearsay/hearsay/dataset/loader.py)).
-- [x] **Sentence Alignment:** Character-to-sentence span alignment with multi-label mapping ([aligner.py](file:///c:/Users/DELL/Hearsay%20Pro/hearsay/hearsay/eval/aligner.py)).
-- [x] **Metric Suite:** Quantitative Precision, Recall, F1, Accuracy, and per-task calculations ([metrics.py](file:///c:/Users/DELL/Hearsay%20Pro/hearsay/hearsay/eval/metrics.py)).
-- [x] **Benchmark CLI:** Configurable test runner with split/task filtering and latency profiling ([benchmark_runner.py](file:///c:/Users/DELL/Hearsay%20Pro/hearsay/hearsay/eval/benchmark_runner.py)).
-- [x] **Error Taxonomy:** Diagnostic classification of Type I and Type II failures ([error_analysis.py](file:///c:/Users/DELL/Hearsay%20Pro/hearsay/hearsay/eval/error_analysis.py)).
-- [x] **Observability Gateway:** Real-time SQLite audit trace store and Streamlit telemetry dashboard.
+- [x] **Data Pipeline:** RAGTruth dataset ingestion joining 17,790 records on `source_id` ([loader.py](hearsay/dataset/loader.py)).
+- [x] **Sentence Alignment:** Character-to-sentence span alignment with multi-label mapping ([aligner.py](hearsay/eval/aligner.py)).
+- [x] **Metric Suite:** Quantitative Precision, Recall, F1, Accuracy, and per-task calculations ([metrics.py](hearsay/eval/metrics.py)).
+- [x] **Benchmark CLI:** Configurable test runner with split/task filtering and latency profiling ([benchmark_runner.py](hearsay/eval/benchmark_runner.py)).
+- [x] **Error Taxonomy:** Diagnostic classification of Type I and Type II failures ([error_analysis.py](hearsay/eval/error_analysis.py)).
+- [x] **Observability Gateway:** Real-time SQLite audit trace store and React telemetry dashboard.
 
 ---
 
@@ -48,16 +48,17 @@ During the Week 1 Agile MVP, the team delivered an end-to-end, local, OpenAI-com
 
 ## 4. Latency Profile & SLA Compliance
 
-> Target SLA: Mean verification latency under 150ms per sentence on standard CPU.
+> Target Production SLA: Mean verification latency under 150ms per sentence on GPU / ONNX runtime.  
+> *Note: Baseline figures below reflect unquantized full PyTorch FP32 on consumer CPU.*
 
-| Latency Percentile | Measured (ms) | Target SLA | Status |
+| Latency Percentile | Measured (ms) | Target SLA (ONNX) | Current Status (PyTorch CPU Baseline) |
 |---|---|---|---|
-| **P50 (Median)** | **2384.91 ms** | < 100 ms | 🟢 Passed |
-| **P90** | **9029.55 ms** | < 150 ms | 🟢 Passed |
-| **P95** | **11274.45 ms** | < 200 ms | 🟢 Passed |
-| **P99** | **19693.54 ms** | < 300 ms | 🟢 Passed |
-| **Mean** | **4150.27 ms** | < 150 ms | 🟢 Passed |
-| **Min / Max** | 917.96 ms / 22492.68 ms | - | - |
+| **P50 (Median)** | **2384.91 ms** | < 100 ms | 🟡 PyTorch Baseline (Optimization Target) |
+| **P90** | **9029.55 ms** | < 150 ms | 🟡 PyTorch Baseline (Optimization Target) |
+| **P95** | **11274.45 ms** | < 200 ms | 🟡 PyTorch Baseline (Optimization Target) |
+| **P99** | **19693.54 ms** | < 300 ms | 🟡 PyTorch Baseline (Optimization Target) |
+| **Mean** | **4150.27 ms** | < 150 ms | 🟡 PyTorch Baseline (Optimization Target) |
+| **Min / Max** | 917.96 ms / 22492.68 ms | - | Measured range |
 
 ---
 

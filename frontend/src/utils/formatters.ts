@@ -6,13 +6,8 @@
 
 export function formatPercentage(val: number | string | undefined | null): string {
   if (val === undefined || val === null || val === '') return '0.0%';
-  let num = Number(val);
+  const num = Number(val);
   if (isNaN(num)) return '0.0%';
-
-  // If fractional representation (0.0 < num <= 1.0), scale to 0-100%
-  if (num > 0 && num <= 1.0) {
-    num = num * 100;
-  }
 
   // Mathematically bound strictly between 0 and 100
   const clamped = Math.min(100, Math.max(0, num));
@@ -21,10 +16,7 @@ export function formatPercentage(val: number | string | undefined | null): strin
 
 export function clampPercentage(val: number | string | undefined | null): number {
   if (val === undefined || val === null || val === '') return 0;
-  let num = Number(val);
+  const num = Number(val);
   if (isNaN(num)) return 0;
-  if (num > 0 && num <= 1.0) {
-    num = num * 100;
-  }
   return Math.min(100, Math.max(0, num));
 }

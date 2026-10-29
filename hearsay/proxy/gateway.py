@@ -1,12 +1,15 @@
-from hearsay.proxy import ContextPayload
+import os
+import threading
 import uuid
 import time
-from fastapi import FastAPI,HTTPException, Request, Response, Depends
-from hearsay.proxy.protocol import VerificationRequest,VerificationResult,ClaimVerdict
+from pathlib import Path
 from typing import Optional, Dict, Any, List
-from hearsay.db import TraceStore
-
+from fastapi import FastAPI, HTTPException, Request, Response, Depends
 from fastapi.middleware.cors import CORSMiddleware
+
+from hearsay.proxy import ContextPayload
+from hearsay.proxy.protocol import VerificationRequest, VerificationResult, ClaimVerdict
+from hearsay.db import TraceStore
 
 app = FastAPI(
     title="Hearsay Gateway API",
@@ -253,13 +256,27 @@ async def get_metrics_summary(
 
 
 _engine_singleton = None
+_engine_lock = threading.Lock()
 
 def _get_engine():
     global _engine_singleton
     if _engine_singleton is None:
-        from hearsay.engine.pipeline import HearsayEngine
-        _engine_singleton = HearsayEngine()
+        with _engine_lock:
+            if _engine_singleton is None:
+                from hearsay.engine.pipeline import HearsayEngine
+                _engine_singleton = HearsayEngine()
     return _engine_singleton
+
+
+@app.on_event("startup")
+async def warmup_engine():
+    """Pre-warm the ML verification engine in background thread so first request has zero cold-start delay."""
+    import logging
+    try:
+        threading.Thread(target=_get_engine, daemon=True).start()
+        logging.info("HearsayEngine background warmup dispatched.")
+    except Exception as e:
+        logging.warning(f"Engine warmup dispatch failed: {e}")
 
 
 def _execute_verification(response_text:str,context:ContextPayload)->VerificationResult:
@@ -363,8 +380,6 @@ def _extract_context(
 
 
 # Mount static React SPA if built
-import os
-from pathlib import Path
 from fastapi.staticfiles import StaticFiles
 
 frontend_dist = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
