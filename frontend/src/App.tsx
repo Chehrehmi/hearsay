@@ -5,9 +5,10 @@ import { SandboxView } from './components/SandboxView';
 import { AdversarialMatrixView } from './components/AdversarialMatrixView';
 import { TraceExplorerView } from './components/TraceExplorerView';
 import { AnalyticsView } from './components/AnalyticsView';
+import { RAGCompanionView } from './components/RAGCompanionView';
 
 export function App() {
-  const [activeTab, setActiveTab] = useState<'sandbox' | 'adversarial' | 'traces' | 'analytics'>('sandbox');
+  const [activeTab, setActiveTab] = useState<'companion' | 'sandbox' | 'adversarial' | 'traces' | 'analytics'>('companion');
   const [metrics, setMetrics] = useState<MetricSummary | null>(null);
   const [isOnline, setIsOnline] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
@@ -104,6 +105,20 @@ export function App() {
                 Main
               </p>
               <nav aria-label="Main Navigation" className="space-y-1">
+                <button
+                  onClick={() => setActiveTab('companion')}
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm transition-colors duration-150 ${
+                    activeTab === 'companion'
+                      ? 'bg-white shadow-sm font-medium text-[#0C0C12]'
+                      : 'text-[#65635C] hover:text-[#0C0C12] hover:bg-white/40 font-normal'
+                  }`}
+                >
+                  <svg className="w-4 h-4 text-[#BD47F2] shrink-0" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                  <span>RAG Companion</span>
+                </button>
+
                 <button
                   onClick={() => setActiveTab('sandbox')}
                   className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm transition-colors duration-150 ${
@@ -308,6 +323,15 @@ export function App() {
 
           {/* Tab Content Stage */}
           <section className="space-y-6">
+            {activeTab === 'companion' && (
+              <RAGCompanionView
+                apiBase={apiBase}
+                onNavigateToTrace={(reqId) => {
+                  setGlobalSearch(reqId);
+                  setActiveTab('traces');
+                }}
+              />
+            )}
             {activeTab === 'sandbox' && (
               <SandboxView onVerificationSuccess={() => fetchMetrics()} />
             )}
