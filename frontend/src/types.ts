@@ -63,3 +63,25 @@ export interface MetricSummary {
   p95_latency_ms?: number;
   p99_latency_ms?: number;
 }
+
+export interface CuratedCorpusItem {
+  id: string;
+  title: string;
+  dataset: string;
+  category: string;
+  question: string;
+  context: string;
+  expected_response: string;
+  expected_verdict?: string;
+  notes?: string;
+}
+
+export interface RAGChatMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  timestamp: string;
+  contextUsed?: string;
+  verification?: VerificationResult | null;
+  isLoading?: boolean;
+}
