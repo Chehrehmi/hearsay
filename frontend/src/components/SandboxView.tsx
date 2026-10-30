@@ -112,32 +112,31 @@ export const SandboxView = ({ onVerificationSuccess }: SandboxViewProps) => {
 
   return (
     <div className="space-y-6">
-      {/* RevenueX Radiant Hero Card */}
+      {/* Architecture Profile & Scenario Header */}
       <section className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <article className="lg:col-span-5 rounded-[32px] hero-banner-gradient p-7 flex flex-col justify-between shadow-card relative min-h-[260px] border border-amber-200/50">
-          <div className="flex items-center gap-2 relative z-10">
-            <span className="inline-flex items-center gap-1.5 bg-[#0C0C12] text-white px-3 py-1.5 rounded-full text-[11px] font-medium tracking-wide shadow-sm">
-              <span className="w-2 h-2 rounded-full bg-[#91FE00]" />
-              <span>Gateway Engine · Zero-Shot NLI</span>
-            </span>
+        <article className="lg:col-span-5 rx-card p-6 md:p-7 flex flex-col justify-between shadow-card border border-black/5 bg-white">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 bg-[#FAF8F3] text-[#0C0C12] border border-[#E5E1D8] px-3 py-1 rounded-full text-[11px] font-medium tracking-wide shadow-xs">
+                <span className="w-2 h-2 rounded-full bg-[#15803D]" />
+                <span>Zero-Shot NLI · Cross-Encoder</span>
+              </span>
+            </div>
+
+            <div className="pt-6">
+              <h2 className="font-serif text-2xl md:text-3xl font-semibold text-[#0C0C12] leading-[1.2] tracking-tight">
+                Runtime Groundedness <br />
+                <span className="italic font-normal">Verification Workbench</span>
+              </h2>
+              <p className="text-xs md:text-sm text-[#7A7870] font-normal mt-2.5 leading-relaxed">
+                Direct cross-examination of generative model outputs against retrieved context premises with sentence-level claim decomposition and contradiction detection.
+              </p>
+            </div>
           </div>
 
-          {/* Background Silk Ribbons */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-40">
-            <svg className="w-full h-full object-cover" fill="none" preserveAspectRatio="none" viewBox="0 0 400 300">
-              <path d="M-20 280 C 150 260, 220 120, 420 80" filter="blur(18px)" opacity="0.45" stroke="white" strokeLinecap="round" strokeWidth="60" />
-              <path d="M200 320 C 260 200, 320 80, 420 10" filter="blur(25px)" opacity="0.6" stroke="#FEF08A" strokeWidth="70" />
-            </svg>
-          </div>
-
-          <div className="relative z-10 pt-12">
-            <h1 className="font-serif text-3xl md:text-4xl text-[#0C0C12] leading-[1.15] font-normal tracking-tight">
-              Runtime <br />
-              <span className="italic font-medium">verification</span>
-            </h1>
-            <p className="text-xs md:text-sm text-[#4E411C] font-normal mt-2.5 opacity-90 max-w-sm">
-              Cross-validate LLM candidate outputs against reference evidence chunks with zero-shot NLI contradiction detection.
-            </p>
+          <div className="pt-4 mt-4 border-t border-[#F2EFE8] flex items-center justify-between text-[11px] text-[#7A7870] font-mono">
+            <span>Threshold: P(Contradiction) &gt; 0.50</span>
+            <span className="text-[#15803D] font-medium">Local CPU Intercept</span>
           </div>
         </article>
 
@@ -203,7 +202,7 @@ export const SandboxView = ({ onVerificationSuccess }: SandboxViewProps) => {
                 value={sourceId}
                 onChange={(e) => setSourceId(e.target.value)}
                 placeholder="doc_id"
-                className="text-xs font-mono bg-[#FAF8F3] border border-[#E5E1D8] px-2.5 py-1 rounded-lg text-[#0C0C12] focus:outline-none focus:border-[#BD47F2]"
+                className="text-xs font-mono bg-[#FAF8F3] border border-[#E5E1D8] px-2.5 py-1 rounded-lg text-[#0C0C12] focus:outline-none focus:ring-1 focus:ring-[#0C0C12]/20 focus:border-[#0C0C12]"
               />
             </div>
 
@@ -213,7 +212,7 @@ export const SandboxView = ({ onVerificationSuccess }: SandboxViewProps) => {
                 value={sourceContext}
                 onChange={(e) => setSourceContext(e.target.value)}
                 placeholder="Paste retrieved source evidence chunk..."
-                className="w-full p-3.5 bg-[#FAF8F3] rounded-2xl border border-[#E5E1D8] text-sm text-[#0C0C12] leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-[#BD47F2]/20 focus:border-[#BD47F2] transition-colors"
+                className="w-full p-3.5 bg-[#FAF8F3] rounded-2xl border border-[#E5E1D8] text-sm text-[#0C0C12] leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-[#0C0C12]/15 focus:border-[#0C0C12] transition-colors"
               />
             </div>
           </div>
@@ -249,7 +248,7 @@ export const SandboxView = ({ onVerificationSuccess }: SandboxViewProps) => {
                 value={responseText}
                 onChange={(e) => setResponseText(e.target.value)}
                 placeholder="Enter model generation to verify..."
-                className="w-full p-3.5 bg-[#FAF8F3] rounded-2xl border border-[#E5E1D8] text-sm text-[#0C0C12] leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-[#BD47F2]/20 focus:border-[#BD47F2] transition-colors"
+                className="w-full p-3.5 bg-[#FAF8F3] rounded-2xl border border-[#E5E1D8] text-sm text-[#0C0C12] leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-[#0C0C12]/15 focus:border-[#0C0C12] transition-colors"
               />
             </div>
           </div>
@@ -276,7 +275,7 @@ export const SandboxView = ({ onVerificationSuccess }: SandboxViewProps) => {
             Clear Fields
           </button>
           {error && (
-            <span className="text-xs text-[#E11D48] font-medium">
+            <span className="text-xs text-[#DC2626] font-medium">
               {error}
             </span>
           )}
@@ -310,7 +309,7 @@ export const SandboxView = ({ onVerificationSuccess }: SandboxViewProps) => {
       {result && (
         <section className="space-y-4">
           {/* Verdict Banner */}
-          <article className="rx-card p-6 border-l-4 border-l-[#0C0C12]">
+          <article className="rx-card p-6 border border-black/5">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-[#F2EFE8]">
               <div>
                 {(() => {

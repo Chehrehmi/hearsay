@@ -109,11 +109,11 @@ export function App() {
                   onClick={() => setActiveTab('companion')}
                   className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm transition-colors duration-150 ${
                     activeTab === 'companion'
-                      ? 'bg-white shadow-sm font-medium text-[#0C0C12]'
+                      ? 'bg-white shadow-sm font-medium text-[#0C0C12] border border-[#E5E1D8]/60'
                       : 'text-[#65635C] hover:text-[#0C0C12] hover:bg-white/40 font-normal'
                   }`}
                 >
-                  <svg className="w-4 h-4 text-[#BD47F2] shrink-0" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <svg className={`w-4 h-4 shrink-0 ${activeTab === 'companion' ? 'text-[#0C0C12]' : 'text-[#7A7870]'}`} width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                   <span>RAG Companion</span>
@@ -123,11 +123,11 @@ export function App() {
                   onClick={() => setActiveTab('sandbox')}
                   className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm transition-colors duration-150 ${
                     activeTab === 'sandbox'
-                      ? 'bg-white shadow-sm font-medium text-[#0C0C12]'
+                      ? 'bg-white shadow-sm font-medium text-[#0C0C12] border border-[#E5E1D8]/60'
                       : 'text-[#65635C] hover:text-[#0C0C12] hover:bg-white/40 font-normal'
                   }`}
                 >
-                  <svg className="w-4 h-4 text-[#0C0C12] shrink-0" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <svg className={`w-4 h-4 shrink-0 ${activeTab === 'sandbox' ? 'text-[#0C0C12]' : 'text-[#7A7870]'}`} width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                     <rect height="7" rx="1.5" width="7" x="3" y="3" />
                     <rect height="7" rx="1.5" width="7" x="14" y="3" />
                     <rect height="7" rx="1.5" width="7" x="14" y="14" />
@@ -140,11 +140,11 @@ export function App() {
                   onClick={() => setActiveTab('adversarial')}
                   className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm transition-colors duration-150 ${
                     activeTab === 'adversarial'
-                      ? 'bg-white shadow-sm font-medium text-[#0C0C12]'
+                      ? 'bg-white shadow-sm font-medium text-[#0C0C12] border border-[#E5E1D8]/60'
                       : 'text-[#65635C] hover:text-[#0C0C12] hover:bg-white/40 font-normal'
                   }`}
                 >
-                  <svg className="w-4 h-4 text-[#7A7870] shrink-0" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                  <svg className={`w-4 h-4 shrink-0 ${activeTab === 'adversarial' ? 'text-[#0C0C12]' : 'text-[#7A7870]'}`} width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                   <span>Adversarial Matrix</span>
@@ -162,11 +162,11 @@ export function App() {
                   onClick={() => setActiveTab('traces')}
                   className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm transition-colors duration-150 ${
                     activeTab === 'traces'
-                      ? 'bg-white shadow-sm font-medium text-[#0C0C12]'
+                      ? 'bg-white shadow-sm font-medium text-[#0C0C12] border border-[#E5E1D8]/60'
                       : 'text-[#65635C] hover:text-[#0C0C12] hover:bg-white/40 font-normal'
                   }`}
                 >
-                  <svg className="w-4 h-4 text-[#7A7870] shrink-0" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                  <svg className={`w-4 h-4 shrink-0 ${activeTab === 'traces' ? 'text-[#0C0C12]' : 'text-[#7A7870]'}`} width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
                     <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                   <span>Trace Explorer</span>
@@ -176,11 +176,11 @@ export function App() {
                   onClick={() => setActiveTab('analytics')}
                   className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm transition-colors duration-150 ${
                     activeTab === 'analytics'
-                      ? 'bg-white shadow-sm font-medium text-[#0C0C12]'
+                      ? 'bg-white shadow-sm font-medium text-[#0C0C12] border border-[#E5E1D8]/60'
                       : 'text-[#65635C] hover:text-[#0C0C12] hover:bg-white/40 font-normal'
                   }`}
                 >
-                  <svg className="w-4 h-4 text-[#7A7870] shrink-0" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                  <svg className={`w-4 h-4 shrink-0 ${activeTab === 'analytics' ? 'text-[#0C0C12]' : 'text-[#7A7870]'}`} width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
                     <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                   <span>System Reliability</span>
@@ -261,7 +261,7 @@ export function App() {
                   }
                 }}
                 placeholder="Search audit traces, ground truth citations, or claims..."
-                className="w-full pl-11 pr-24 py-2.5 bg-white rounded-full border border-black/5 text-xs md:text-sm text-[#0C0C12] placeholder-[#9A9890] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#BD47F2]/20 focus:border-[#BD47F2] transition-colors"
+                className="w-full pl-11 pr-24 py-2.5 bg-white rounded-full border border-black/5 text-xs md:text-sm text-[#0C0C12] placeholder-[#9A9890] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0C0C12]/15 focus:border-[#0C0C12] transition-colors"
               />
               <div className="absolute inset-y-0 right-0 pr-2.5 flex items-center">
                 <button
@@ -289,7 +289,7 @@ export function App() {
             <div className="flex items-center justify-end gap-3">
               {/* Proxy Radar Indicator */}
               <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white rounded-full border border-black/5 shadow-pill text-xs font-medium text-[#0C0C12]">
-                <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-[#91FE00]' : 'bg-[#E11D48]'}`} />
+                <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-[#15803D]' : 'bg-[#DC2626]'}`} />
                 <span>{isOnline ? 'Gateway: 8000 Live' : 'Gateway: Offline'}</span>
               </div>
 

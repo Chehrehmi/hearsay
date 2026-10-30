@@ -27,10 +27,20 @@ export const TraceExplorerView = ({ initialSearch = '' }: TraceExplorerViewProps
       const res = await fetch(`${apiBase}/v1/traces?limit=50`);
       if (res.ok) {
         const data = await res.json();
-        const parsed = (data || []).map((t: any) => ({
-          ...t,
-          claims: typeof t.claims === 'string' ? JSON.parse(t.claims) : t.claims
-        }));
+        const parsed = (data || []).map((t: any) => {
+          let claims = t.claims;
+          if (typeof claims === 'string') {
+            try { claims = JSON.parse(claims); } catch { claims = []; }
+          } else if (!claims && t.result?.claims) {
+            claims = t.result.claims;
+          } else if (!claims && typeof t.result_json === 'string') {
+            try { claims = JSON.parse(t.result_json).claims; } catch { claims = []; }
+          }
+          return {
+            ...t,
+            claims: claims || [],
+          };
+        });
         setTraces(parsed);
       }
     } catch (err) {
@@ -120,7 +130,7 @@ export const TraceExplorerView = ({ initialSearch = '' }: TraceExplorerViewProps
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search trace or text..."
-                className="pl-8 pr-4 py-1.5 bg-[#FAF8F3] border border-[#E5E1D8] rounded-full text-xs text-[#0C0C12] placeholder-[#8C887E] focus:outline-none focus:border-[#BD47F2] transition-colors"
+                className="pl-8 pr-4 py-1.5 bg-[#FAF8F3] border border-[#E5E1D8] rounded-full text-xs text-[#0C0C12] placeholder-[#8C887E] focus:outline-none focus:ring-1 focus:ring-[#0C0C12]/20 focus:border-[#0C0C12] transition-colors"
               />
             </div>
           </div>
@@ -158,19 +168,19 @@ export const TraceExplorerView = ({ initialSearch = '' }: TraceExplorerViewProps
                         </td>
                         <td className="py-3.5 px-3">
                           <span
-                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium ${
+                            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
                               isGrounded
-                                ? 'bg-[#E8F8D6] text-[#2F6B12]'
+                                ? 'bg-[#E8F8D6] text-[#15803D]'
                                 : 'bg-[#FEE2E2] text-[#991B1B]'
                             }`}
                           >
-                            {isGrounded ? 'Grounded' : 'Contradiction'}
+                            {isGrounded ? 'Grounded' : ((trace.contradicted_claims ?? 0) > 0 ? 'Contradiction' : 'Hallucination')}
                           </span>
                         </td>
-                        <td className="py-3.5 px-3 font-mono text-[#7A7870]">
+                        <td className="py-3.5 px-3 font-mono text-[#7A7870] tabular-nums">
                           {trace.latency_ms ? `${trace.latency_ms.toFixed(0)} ms` : '—'}
                         </td>
-                        <td className="py-3.5 px-3 text-right font-serif text-sm font-semibold text-[#0C0C12]">
+                        <td className="py-3.5 px-3 text-right font-serif text-sm font-semibold text-[#0C0C12] font-mono tabular-nums">
                           {formatPercentage(trace.groundedness_score)}
                         </td>
                         <td className="py-3.5 px-3 text-right">
@@ -214,11 +224,11 @@ export const TraceExplorerView = ({ initialSearch = '' }: TraceExplorerViewProps
                     <span
                       className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${
                         (selectedTrace.grounded ?? (selectedTrace.overall_status === 'Verified'))
-                          ? 'bg-[#E8F8D6] text-[#2F6B12]'
+                          ? 'bg-[#E8F8D6] text-[#15803D]'
                           : 'bg-[#FEE2E2] text-[#991B1B]'
                       }`}
                     >
-                      {(selectedTrace.grounded ?? (selectedTrace.overall_status === 'Verified')) ? 'Grounded' : 'Contradiction'}
+                      {(selectedTrace.grounded ?? (selectedTrace.overall_status === 'Verified')) ? 'Grounded' : ((selectedTrace.contradicted_claims ?? 0) > 0 ? 'Contradiction' : 'Hallucination')}
                     </span>
                   </div>
                   <h2 className="font-serif text-2xl font-semibold text-[#0C0C12] mt-1.5">

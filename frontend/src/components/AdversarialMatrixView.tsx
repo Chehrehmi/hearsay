@@ -70,7 +70,7 @@ export const AdversarialMatrixView: React.FC = () => {
         </div>
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-full border border-black/5 shadow-pill text-xs font-medium text-[#0C0C12]">
-            <span className="w-2 h-2 rounded-full bg-[#BD47F2]" />
+            <span className="w-2 h-2 rounded-full bg-[#15803D]" />
             <span>Dataset: RAGTruth ACL 2024</span>
           </span>
         </div>
@@ -82,11 +82,11 @@ export const AdversarialMatrixView: React.FC = () => {
           <div>
             <div className="flex items-center justify-between text-xs text-[#7A7870]">
               <span>Synonym Substitution</span>
-              <span className="text-[10px] font-medium bg-[#F1EFEA] px-2 py-0.5 rounded-full">WordNet</span>
+              <span className="text-[10px] font-medium bg-[#F1EFEA] px-2 py-0.5 rounded-full font-mono">WordNet</span>
             </div>
             <div className="mt-3 flex items-baseline gap-2">
-              <span className="font-serif text-3xl font-semibold text-[#059669]">90.0%</span>
-              <span className="text-xs text-[#059669] font-medium">Detection</span>
+              <span className="font-serif text-3xl font-semibold text-[#15803D] tabular-nums">90.0%</span>
+              <span className="text-xs text-[#15803D] font-medium">Detection</span>
             </div>
           </div>
           <div className="mt-3 pt-3 border-t border-[#F5F2EB] text-[11px] text-[#7A7870]">
@@ -98,11 +98,11 @@ export const AdversarialMatrixView: React.FC = () => {
           <div>
             <div className="flex items-center justify-between text-xs text-[#7A7870]">
               <span>Epistemic Hedging</span>
-              <span className="text-[10px] font-medium bg-[#FAF8F3] text-[#B45309] px-2 py-0.5 rounded-full">CoNLL-2010</span>
+              <span className="text-[10px] font-medium bg-[#FAF8F3] text-[#B45309] px-2 py-0.5 rounded-full font-mono">CoNLL-2010</span>
             </div>
             <div className="mt-3 flex items-baseline gap-2">
-              <span className="font-serif text-3xl font-semibold text-[#059669]">98.0%</span>
-              <span className="text-xs text-[#059669] font-medium">Detection</span>
+              <span className="font-serif text-3xl font-semibold text-[#15803D] tabular-nums">98.0%</span>
+              <span className="text-xs text-[#15803D] font-medium">Detection</span>
             </div>
           </div>
           <div className="mt-3 pt-3 border-t border-[#F5F2EB] text-[11px] text-[#7A7870]">
@@ -114,11 +114,11 @@ export const AdversarialMatrixView: React.FC = () => {
           <div>
             <div className="flex items-center justify-between text-xs text-[#7A7870]">
               <span>Syntactic Paraphrase</span>
-              <span className="text-[10px] font-medium bg-[#F1EFEA] px-2 py-0.5 rounded-full">CheckList INV</span>
+              <span className="text-[10px] font-medium bg-[#F1EFEA] px-2 py-0.5 rounded-full font-mono">CheckList INV</span>
             </div>
             <div className="mt-3 flex items-baseline gap-2">
-              <span className="font-serif text-3xl font-semibold text-[#059669]">100%</span>
-              <span className="text-xs text-[#059669] font-medium">Detection</span>
+              <span className="font-serif text-3xl font-semibold text-[#15803D] tabular-nums">100%</span>
+              <span className="text-xs text-[#15803D] font-medium">Detection</span>
             </div>
           </div>
           <div className="mt-3 pt-3 border-t border-[#F5F2EB] text-[11px] text-[#7A7870]">
@@ -130,11 +130,11 @@ export const AdversarialMatrixView: React.FC = () => {
           <div>
             <div className="flex items-center justify-between text-xs text-[#7A7870]">
               <span>Hearsay Dual-Path</span>
-              <span className="text-[10px] font-medium bg-[#E8F8D6] text-[#2F6B12] px-2 py-0.5 rounded-full">Defense</span>
+              <span className="text-[10px] font-medium bg-[#E8F8D6] text-[#2F6B12] px-2 py-0.5 rounded-full font-mono">Defense</span>
             </div>
             <div className="mt-3 flex items-baseline gap-2">
-              <span className="font-serif text-3xl font-semibold text-[#059669]">100%</span>
-              <span className="text-xs text-[#059669] font-medium">Robustness</span>
+              <span className="font-serif text-3xl font-semibold text-[#15803D] tabular-nums">100%</span>
+              <span className="text-xs text-[#15803D] font-medium">Robustness</span>
             </div>
           </div>
           <div className="mt-3 pt-3 border-t border-[#F5F2EB] text-[11px] text-[#7A7870]">
@@ -231,7 +231,7 @@ export const AdversarialMatrixView: React.FC = () => {
               "{current.text}"
             </p>
             <div className="mt-4 pt-3 border-t border-[#F2EFE8] flex items-center justify-between text-xs">
-              <span className="text-[#7A7870]">Claimed Year: <strong className="text-[#E11D48]">2022</strong> (False)</span>
+              <span className="text-[#7A7870]">Claimed Year: <strong className="text-[#DC2626] font-mono">2022</strong> (False)</span>
               <span className="font-mono font-semibold text-[#0C0C12]">
                 Verdict: {current.verdict}
               </span>
@@ -243,34 +243,34 @@ export const AdversarialMatrixView: React.FC = () => {
         <div className="rounded-2xl bg-[#FAF8F3] p-5 border border-[#E5E1D8]">
           <div className="flex items-center justify-between text-xs text-[#7A7870] font-medium mb-3">
             <span>DeBERTa-v3 Softmax Shift</span>
-            <span>Contradiction Confidence: {(current.confidence * 100).toFixed(1)}%</span>
+            <span className="font-mono tabular-nums">Contradiction Confidence: {(current.confidence * 100).toFixed(1)}%</span>
           </div>
 
           <div className="grid grid-cols-3 gap-3 mb-4">
             <div>
               <div className="flex justify-between text-xs mb-1">
-                <span className="text-[#059669] font-medium">Entailment</span>
-                <span className="font-mono text-[#059669]">{(current.nli.entailment * 100).toFixed(1)}%</span>
+                <span className="text-[#15803D] font-medium">Entailment</span>
+                <span className="font-mono text-[#15803D] tabular-nums">{(current.nli.entailment * 100).toFixed(1)}%</span>
               </div>
               <div className="h-2 w-full bg-[#E8E4DA] rounded-full overflow-hidden">
-                <div className="h-full bg-[#059669] rounded-full" style={{ width: `${current.nli.entailment * 100}%` }} />
+                <div className="h-full bg-[#15803D] rounded-full" style={{ width: `${current.nli.entailment * 100}%` }} />
               </div>
             </div>
 
             <div>
               <div className="flex justify-between text-xs mb-1">
-                <span className="text-[#E11D48] font-medium">Contradiction</span>
-                <span className="font-mono text-[#E11D48]">{(current.nli.contradiction * 100).toFixed(1)}%</span>
+                <span className="text-[#DC2626] font-medium">Contradiction</span>
+                <span className="font-mono text-[#DC2626] tabular-nums">{(current.nli.contradiction * 100).toFixed(1)}%</span>
               </div>
               <div className="h-2 w-full bg-[#E8E4DA] rounded-full overflow-hidden">
-                <div className="h-full bg-[#E11D48] rounded-full" style={{ width: `${current.nli.contradiction * 100}%` }} />
+                <div className="h-full bg-[#DC2626] rounded-full" style={{ width: `${current.nli.contradiction * 100}%` }} />
               </div>
             </div>
 
             <div>
               <div className="flex justify-between text-xs mb-1">
                 <span className="text-[#7A7870] font-medium">Neutral</span>
-                <span className="font-mono text-[#7A7870]">{(current.nli.neutral * 100).toFixed(1)}%</span>
+                <span className="font-mono text-[#7A7870] tabular-nums">{(current.nli.neutral * 100).toFixed(1)}%</span>
               </div>
               <div className="h-2 w-full bg-[#E8E4DA] rounded-full overflow-hidden">
                 <div className="h-full bg-[#7A7870] rounded-full" style={{ width: `${current.nli.neutral * 100}%` }} />

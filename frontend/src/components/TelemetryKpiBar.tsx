@@ -42,21 +42,21 @@ export const TelemetryKpiBar = ({ metrics, isOnline }: TelemetryKpiBarProps) => 
           </div>
         </div>
 
-        {/* 20 Segmented Micro-Pills */}
+          {/* 20 Segmented Micro-Pills */}
         <div className="mt-4 pt-3 border-t border-[#F5F2EB]">
           <div className="flex items-center gap-1 overflow-hidden">
             {Array.from({ length: 20 }).map((_, idx) => (
               <span
                 key={idx}
-                className={`h-3 flex-1 rounded-full ${
+                className={`h-2.5 flex-1 rounded-full transition-colors duration-200 ${
                   idx < activePills
-                    ? 'bg-[#BD47F2]'
+                    ? scoreNum >= 80 ? 'bg-[#15803D]' : 'bg-[#D97706]'
                     : 'bg-[#EAE7DF]'
                 }`}
               />
             ))}
           </div>
-          <div className="flex justify-between text-[10px] text-[#8C887E] mt-1.5 font-medium">
+          <div className="flex justify-between text-[10px] text-[#8C887E] mt-1.5 font-medium tabular-nums">
             <span>Pass rate: {formatPercentage(passRate)}</span>
             <span>{verifiedCount} / {total} verified</span>
           </div>
@@ -105,7 +105,7 @@ export const TelemetryKpiBar = ({ metrics, isOnline }: TelemetryKpiBarProps) => 
 
         <div className="mt-4 pt-3 border-t border-[#F5F2EB] flex items-center justify-between text-xs">
           <span className="text-[#7A7870]">Hallucinations Flagged</span>
-          <span className="font-mono font-semibold text-[#E11D48]">{hallucinations}</span>
+          <span className="font-mono font-semibold text-[#DC2626] tabular-nums">{hallucinations}</span>
         </div>
       </article>
 
@@ -115,7 +115,7 @@ export const TelemetryKpiBar = ({ metrics, isOnline }: TelemetryKpiBarProps) => 
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium text-[#7A7870]">Gateway Proxy</span>
             <div className="flex items-center gap-1.5">
-              <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-[#91FE00]' : 'bg-[#E11D48]'}`} />
+              <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-[#15803D]' : 'bg-[#DC2626]'}`} />
               <span className="text-[11px] font-medium text-[#0C0C12]">
                 {isOnline ? 'Port 8000' : 'Offline'}
               </span>

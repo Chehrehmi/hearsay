@@ -59,7 +59,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ metrics }) => {
         </div>
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-full border border-black/5 shadow-pill text-xs font-medium text-[#0C0C12]">
-            <span className="w-2 h-2 rounded-full bg-[#91FE00]" />
+            <span className="w-2 h-2 rounded-full bg-[#15803D]" />
             <span>SQLite Audit Store: Active</span>
           </span>
         </div>
@@ -87,15 +87,15 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ metrics }) => {
               <div className="flex items-center gap-3">
                 <div className="hidden sm:flex items-center gap-2.5 text-[11px] text-[#7A7870]">
                   <span className="flex items-center gap-1">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#059669]" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#15803D]" />
                     <span>Grounded</span>
                   </span>
                   <span className="flex items-center gap-1">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#BD47F2]" />
-                    <span>Contradiction</span>
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#DC2626]" />
+                    <span>Hallucinated</span>
                   </span>
                 </div>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#F6F5F1] text-[#0C0C12] text-xs font-medium rounded-full">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#F6F5F1] text-[#0C0C12] text-xs font-medium rounded-full font-mono">
                   <span>{traces.length} Recent Scans</span>
                 </span>
               </div>
@@ -103,13 +103,13 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ metrics }) => {
 
             {/* Metric Banner with Real Data */}
             <div className="mt-4 flex flex-wrap items-baseline gap-3">
-              <span className="font-serif text-3xl md:text-[34px] font-semibold tracking-tight text-[#0C0C12]">
+              <span className="font-serif text-3xl md:text-[34px] font-semibold tracking-tight text-[#0C0C12] font-mono tabular-nums">
                 {metrics?.total_requests ?? 0} Total Requests
               </span>
-              <span className="text-xs text-[#8C887E]">
+              <span className="text-xs text-[#8C887E] font-mono tabular-nums">
                 Avg Groundedness: {formatPercentage(metrics?.avg_groundedness_score)}
               </span>
-              <span className="text-xs text-[#8C887E]">
+              <span className="text-xs text-[#8C887E] font-mono tabular-nums">
                 Mean Latency: {avg} ms
               </span>
             </div>
@@ -153,8 +153,8 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ metrics }) => {
                           <div
                             className={`w-full max-w-[28px] rounded-t-md transition-all duration-200 shadow-sm ${
                               isGrounded
-                                ? 'bg-[#059669] hover:bg-[#047857]'
-                                : 'bg-[#BD47F2] hover:bg-[#9E20D5]'
+                                ? 'bg-[#15803D] hover:bg-[#166534]'
+                                : 'bg-[#DC2626] hover:bg-[#B91C1C]'
                             }`}
                             style={{ height: `${pct}%` }}
                           />
@@ -170,13 +170,13 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ metrics }) => {
                         <span className="font-mono text-xs">{hoveredTrace.request_id.slice(0, 12)}...</span>
                         <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold ${
                           (hoveredTrace.grounded ?? (hoveredTrace.overall_status === 'Verified'))
-                            ? 'bg-[#E8F8D6] text-[#2F6B12]'
+                            ? 'bg-[#E8F8D6] text-[#15803D]'
                             : 'bg-[#FEE2E2] text-[#991B1B]'
                         }`}>
                           {(hoveredTrace.grounded ?? (hoveredTrace.overall_status === 'Verified')) ? 'Verified' : 'Contradiction'}
                         </span>
                       </div>
-                      <div className="text-[10px] text-[#5F5D56] mt-1 flex gap-3">
+                      <div className="text-[10px] text-[#5F5D56] mt-1 flex gap-3 font-mono tabular-nums">
                         <span>Latency: <strong>{hoveredTrace.latency_ms?.toFixed(0)} ms</strong></span>
                         <span>
                           Groundedness: <strong>{formatPercentage(hoveredTrace.groundedness_score)}</strong>
@@ -186,7 +186,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ metrics }) => {
                   )}
 
                   {/* Axis labels */}
-                  <div className="pt-2 flex justify-between text-[11px] text-[#8C887E] font-medium px-1 border-t border-[#E8E4DA]">
+                  <div className="pt-2 flex justify-between text-[11px] text-[#8C887E] font-medium px-1 border-t border-[#E8E4DA] font-mono">
                     <span>Oldest ({traces[0]?.request_id.slice(0, 8)}...)</span>
                     <span>Recent Scans (P50: {p50} ms)</span>
                     <span>Latest ({traces[traces.length - 1]?.request_id.slice(0, 8)}...)</span>
@@ -213,7 +213,7 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ metrics }) => {
             </div>
 
             <div className="mt-4 flex items-baseline gap-2">
-              <span className="font-serif text-4xl font-semibold text-[#BD47F2] tracking-tight">
+              <span className="font-serif text-4xl font-semibold text-[#0C0C12] tracking-tight font-mono tabular-nums">
                 {passRate.toFixed(1)}%
               </span>
               <span className="text-xs text-[#7A7870]">factual integrity</span>
@@ -224,8 +224,8 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ metrics }) => {
               {Array.from({ length: 20 }).map((_, idx) => (
                 <span
                   key={idx}
-                  className={`h-5 w-1 rounded-full ${
-                    idx < activePills ? 'bg-[#BD47F2]' : 'bg-[#EAE7DF]'
+                  className={`h-5 w-1 rounded-full transition-colors ${
+                    idx < activePills ? (passRate >= 80 ? 'bg-[#15803D]' : 'bg-[#D97706]') : 'bg-[#EAE7DF]'
                   }`}
                 />
               ))}
@@ -237,13 +237,13 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ metrics }) => {
 
           <div className="mt-6 pt-4 border-t border-[#F5F2EB] flex items-center justify-between text-xs">
             <div>
-              <div className="font-medium text-[#059669]">
+              <div className="font-medium text-[#15803D] font-mono tabular-nums">
                 {metrics?.total_verified ?? 0} Passed
               </div>
               <div className="text-[10px] text-[#7A7870]">Zero contradictions</div>
             </div>
             <div className="text-right">
-              <div className="font-medium text-[#E11D48]">
+              <div className="font-medium text-[#DC2626] font-mono tabular-nums">
                 {metrics?.total_hallucinations ?? 0} Flagged
               </div>
               <div className="text-[10px] text-[#7A7870]">Hallucinations intercepted</div>
@@ -260,26 +260,26 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ metrics }) => {
             <h3 className="font-serif text-lg font-semibold text-[#0C0C12]">
               Inference Latency Percentiles
             </h3>
-            <span className="text-xs text-[#7A7870] font-mono">PyTorch/ONNX</span>
+            <span className="text-xs text-[#7A7870] font-mono">PyTorch/CPU</span>
           </div>
 
           <div className="grid grid-cols-3 gap-3 my-5">
             <div className="rounded-2xl bg-[#FAF8F3] p-4 border border-[#EBE7DC]">
               <div className="text-xs text-[#7A7870]">P50 Median</div>
-              <div className="font-serif text-2xl font-semibold text-[#0C0C12] mt-1">{p50} ms</div>
-              <div className="text-[10px] text-[#059669] mt-0.5">Median scan</div>
+              <div className="font-serif text-2xl font-semibold text-[#0C0C12] mt-1 font-mono tabular-nums">{p50} ms</div>
+              <div className="text-[10px] text-[#15803D] mt-0.5">Median scan</div>
             </div>
 
             <div className="rounded-2xl bg-[#FAF8F3] p-4 border border-[#EBE7DC]">
               <div className="text-xs text-[#7A7870]">Mean Latency</div>
-              <div className="font-serif text-2xl font-semibold text-[#0C0C12] mt-1">{avg} ms</div>
+              <div className="font-serif text-2xl font-semibold text-[#0C0C12] mt-1 font-mono tabular-nums">{avg} ms</div>
               <div className="text-[10px] text-[#7A7870] mt-0.5">Across all scans</div>
             </div>
 
             <div className="rounded-2xl bg-[#FAF8F3] p-4 border border-[#EBE7DC]">
               <div className="text-xs text-[#7A7870]">P95 Tail</div>
-              <div className="font-serif text-2xl font-semibold text-[#E11D48] mt-1">{p95} ms</div>
-              <div className="text-[10px] text-[#E11D48] mt-0.5">Tail bound</div>
+              <div className="font-serif text-2xl font-semibold text-[#DC2626] mt-1 font-mono tabular-nums">{p95} ms</div>
+              <div className="text-[10px] text-[#DC2626] mt-0.5">Tail bound</div>
             </div>
           </div>
 
@@ -294,34 +294,34 @@ export const AnalyticsView: React.FC<AnalyticsViewProps> = ({ metrics }) => {
             <h3 className="font-serif text-lg font-semibold text-[#0C0C12]">
               Claim Verification Distribution
             </h3>
-            <span className="text-xs text-[#7A7870] font-mono">{totalClaims} total claims</span>
+            <span className="text-xs text-[#7A7870] font-mono tabular-nums">{totalClaims} total claims</span>
           </div>
 
           <div className="my-5 space-y-4">
             <div>
               <div className="flex justify-between text-xs mb-1">
-                <span className="font-medium text-[#059669]">Supported Claims (Entailment)</span>
-                <span className="font-mono text-[#059669]">{supportedClaims} ({suppPct}%)</span>
+                <span className="font-medium text-[#15803D]">Supported Claims (Entailment)</span>
+                <span className="font-mono text-[#15803D] tabular-nums">{supportedClaims} ({suppPct}%)</span>
               </div>
               <div className="h-2 w-full bg-[#FAF8F3] rounded-full overflow-hidden border border-[#EBE7DC]">
-                <div className="h-full bg-[#059669] rounded-full transition-all duration-300" style={{ width: `${suppPct}%` }} />
+                <div className="h-full bg-[#15803D] rounded-full transition-all duration-300" style={{ width: `${suppPct}%` }} />
               </div>
             </div>
 
             <div>
               <div className="flex justify-between text-xs mb-1">
-                <span className="font-medium text-[#E11D48]">Contradicted Claims (Hallucinations)</span>
-                <span className="font-mono text-[#E11D48]">{contradictedClaims} ({contPct}%)</span>
+                <span className="font-medium text-[#DC2626]">Contradicted Claims (Hallucinations)</span>
+                <span className="font-mono text-[#DC2626] tabular-nums">{contradictedClaims} ({contPct}%)</span>
               </div>
               <div className="h-2 w-full bg-[#FAF8F3] rounded-full overflow-hidden border border-[#EBE7DC]">
-                <div className="h-full bg-[#E11D48] rounded-full transition-all duration-300" style={{ width: `${contPct}%` }} />
+                <div className="h-full bg-[#DC2626] rounded-full transition-all duration-300" style={{ width: `${contPct}%` }} />
               </div>
             </div>
 
             <div>
               <div className="flex justify-between text-xs mb-1">
                 <span className="font-medium text-[#7A7870]">Ungrounded Statements</span>
-                <span className="font-mono text-[#7A7870]">{ungroundedClaims} ({ungrPct}%)</span>
+                <span className="font-mono text-[#7A7870] tabular-nums">{ungroundedClaims} ({ungrPct}%)</span>
               </div>
               <div className="h-2 w-full bg-[#FAF8F3] rounded-full overflow-hidden border border-[#EBE7DC]">
                 <div className="h-full bg-[#7A7870] rounded-full transition-all duration-300" style={{ width: `${ungrPct}%` }} />

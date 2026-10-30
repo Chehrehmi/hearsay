@@ -16,6 +16,7 @@ export interface ClaimRecord {
   evidence?: string | null;
   source_chunk_id?: string | null;
   nli_logits?: NliLogits | null;
+  unmatched_entities?: string[];
 }
 
 export interface VerificationResult {

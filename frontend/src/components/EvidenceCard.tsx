@@ -7,11 +7,17 @@ interface EvidenceCardProps {
 export const EvidenceCard = ({ claim }: EvidenceCardProps) => {
   const isSupported = claim.status === 'Supported';
   const isContradicted = claim.status.toLowerCase().includes('contradict');
+  const hasEntityMismatch = 
+    claim.status.toLowerCase().includes('entity') || 
+    Boolean(claim.unmatched_entities && claim.unmatched_entities.length > 0 && !isSupported);
   
   let badgeBg = 'bg-[#FEF3C7] text-[#92400E] border-[#FDE68A]';
   let label = 'Ungrounded';
 
-  if (isSupported) {
+  if (hasEntityMismatch) {
+    badgeBg = 'bg-[#FEE2E2] text-[#991B1B] border-[#FECACA]';
+    label = 'Entity Mismatch';
+  } else if (isSupported) {
     badgeBg = 'bg-[#E8F8D6] text-[#2F6B12] border-[#C8EAA8]';
     label = 'Supported';
   } else if (isContradicted) {
@@ -70,6 +76,24 @@ export const EvidenceCard = ({ claim }: EvidenceCardProps) => {
         </p>
       </div>
 
+      {/* Entity Violation Banner if present */}
+      {claim.unmatched_entities && claim.unmatched_entities.length > 0 && (
+        <div className="flex items-start gap-2.5 mb-4 p-3 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-xs text-[#991B1B]">
+          <svg className="w-4 h-4 shrink-0 text-[#DC2626] mt-0.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          <div className="leading-relaxed">
+            <span className="font-semibold">Entity Grounding Violation:</span> Unmatched named entity{' '}
+            {claim.unmatched_entities.map((ent, idx) => (
+              <span key={idx} className="inline-block bg-white/90 border border-[#FECACA] font-mono text-[11px] font-semibold px-1.5 py-0.5 rounded mx-1 text-[#991B1B]">
+                "{ent}"
+              </span>
+            ))}{' '}
+            has no grounding antecedent in source evidence.
+          </div>
+        </div>
+      )}
+
       {/* 3-Class NLI Softmax Micro-meters */}
       <div className="bg-[#FAF8F3] rounded-2xl p-3.5 border border-[#EBE7DC] mb-4">
         <div className="flex items-center justify-between mb-2">
@@ -83,12 +107,12 @@ export const EvidenceCard = ({ claim }: EvidenceCardProps) => {
         <div className="grid grid-cols-3 gap-3">
           <div>
             <div className="flex justify-between text-xs mb-1">
-              <span className="text-[#059669] font-medium">Entailment</span>
-              <span className="font-mono text-[#059669]">{(entailmentVal * 100).toFixed(1)}%</span>
+              <span className="text-[#15803D] font-medium">Entailment</span>
+              <span className="font-mono text-[#15803D] tabular-nums">{(entailmentVal * 100).toFixed(1)}%</span>
             </div>
             <div className="h-1.5 w-full bg-[#E8E4DA] rounded-full overflow-hidden">
               <div 
-                className="h-full bg-[#059669] rounded-full transition-[width] duration-300 ease-out"
+                className="h-full bg-[#15803D] rounded-full transition-[width] duration-300 ease-out"
                 style={{ width: `${Math.min(100, entailmentVal * 100)}%` }}
               />
             </div>
@@ -96,12 +120,12 @@ export const EvidenceCard = ({ claim }: EvidenceCardProps) => {
 
           <div>
             <div className="flex justify-between text-xs mb-1">
-              <span className="text-[#E11D48] font-medium">Contradiction</span>
-              <span className="font-mono text-[#E11D48]">{(contradictionVal * 100).toFixed(1)}%</span>
+              <span className="text-[#DC2626] font-medium">Contradiction</span>
+              <span className="font-mono text-[#DC2626] tabular-nums">{(contradictionVal * 100).toFixed(1)}%</span>
             </div>
             <div className="h-1.5 w-full bg-[#E8E4DA] rounded-full overflow-hidden">
               <div 
-                className="h-full bg-[#E11D48] rounded-full transition-[width] duration-300 ease-out"
+                className="h-full bg-[#DC2626] rounded-full transition-[width] duration-300 ease-out"
                 style={{ width: `${Math.min(100, contradictionVal * 100)}%` }}
               />
             </div>
@@ -110,7 +134,7 @@ export const EvidenceCard = ({ claim }: EvidenceCardProps) => {
           <div>
             <div className="flex justify-between text-xs mb-1">
               <span className="text-[#7A7870] font-medium">Neutral</span>
-              <span className="font-mono text-[#7A7870]">{(neutralVal * 100).toFixed(1)}%</span>
+              <span className="font-mono text-[#7A7870] tabular-nums">{(neutralVal * 100).toFixed(1)}%</span>
             </div>
             <div className="h-1.5 w-full bg-[#E8E4DA] rounded-full overflow-hidden">
               <div 

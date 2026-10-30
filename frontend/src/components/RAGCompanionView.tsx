@@ -215,7 +215,7 @@ export function RAGCompanionView({ apiBase, onNavigateToTrace }: RAGCompanionVie
                 onClick={() => setShowKeyInput(!showKeyInput)}
                 className="px-3 py-1.5 bg-white border border-[#D9D4C7] rounded-full text-xs text-[#0C0C12] hover:bg-[#F6F5F1] transition-colors"
               >
-                {geminiKey ? 'API Key Configured ✓' : 'Set Gemini Key'}
+                {geminiKey ? 'API Key Configured' : 'Set Gemini Key'}
               </button>
             )}
 
@@ -226,7 +226,7 @@ export function RAGCompanionView({ apiBase, onNavigateToTrace }: RAGCompanionVie
                   setMessages([]);
                   setSelectedMessageId(null);
                 }}
-                className="px-3 py-1.5 bg-white border border-[#D9D4C7] rounded-full text-xs text-[#E11D48] hover:bg-[#FFF1F2] transition-colors"
+                className="px-3 py-1.5 bg-white border border-[#D9D4C7] rounded-full text-xs text-[#DC2626] hover:bg-[#FFF1F2] transition-colors"
               >
                 Clear Chat
               </button>
@@ -243,7 +243,7 @@ export function RAGCompanionView({ apiBase, onNavigateToTrace }: RAGCompanionVie
               value={geminiKey}
               onChange={(e) => setGeminiKey(e.target.value)}
               placeholder="Paste AI Studio API Key (optional — falls back to offline extractor if empty)"
-              className="flex-1 text-xs px-3 py-1.5 bg-[#FAF8F3] border border-[#D9D4C7] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#BD47F2]"
+              className="flex-1 text-xs px-3 py-1.5 bg-[#FAF8F3] border border-[#D9D4C7] rounded-lg focus:outline-none focus:ring-1 focus:ring-[#0C0C12]/20 focus:border-[#0C0C12]"
             />
             <button
               type="button"
@@ -294,9 +294,9 @@ export function RAGCompanionView({ apiBase, onNavigateToTrace }: RAGCompanionVie
 
       {/* Error alert banner */}
       {errorMessage && (
-        <div className="p-3 bg-[#FFF1F2] border border-[#FECDD3] rounded-xl text-xs text-[#E11D48] flex items-center justify-between">
+        <div className="p-3 bg-[#FFF1F2] border border-[#FECDD3] rounded-xl text-xs text-[#DC2626] flex items-center justify-between">
           <span>{errorMessage}</span>
-          <button type="button" onClick={() => setErrorMessage(null)} className="font-bold ml-2">✕</button>
+          <button type="button" onClick={() => setErrorMessage(null)} className="text-xs font-semibold hover:underline ml-2">Dismiss</button>
         </div>
       )}
 
@@ -309,7 +309,7 @@ export function RAGCompanionView({ apiBase, onNavigateToTrace }: RAGCompanionVie
             <span className="text-xs font-semibold text-[#0C0C12] uppercase tracking-wider">
               Conversational Session
             </span>
-            <span className="text-[11px] text-[#7A7870]">
+            <span className="text-[11px] text-[#7A7870] font-mono">
               Mode: {mode === 'corpus' ? 'Offline Benchmark Split' : 'Live Gateway Proxy'}
             </span>
           </div>
@@ -318,11 +318,13 @@ export function RAGCompanionView({ apiBase, onNavigateToTrace }: RAGCompanionVie
           <div className="flex-1 overflow-y-auto overscroll-contain py-4 space-y-4 max-h-[460px] pr-1">
             {messages.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center p-8 text-[#7A7870] space-y-2">
-                <div className="w-10 h-10 rounded-full bg-[#E8E4DA]/50 flex items-center justify-center text-[#7A7870]">
-                  💬
+                <div className="w-10 h-10 rounded-full bg-[#E8E4DA]/50 flex items-center justify-center text-[#47453F]">
+                  <svg className="w-5 h-5" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                    <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
                 </div>
                 <p className="text-xs font-medium text-[#0C0C12]">No conversation started yet.</p>
-                <p className="text-[11px] max-w-sm">
+                <p className="text-[11px] max-w-sm text-[#7A7870]">
                   Select an authentic benchmark scenario above or type a custom question to inspect Hearsay's inline groundedness verification.
                 </p>
               </div>
@@ -342,7 +344,7 @@ export function RAGCompanionView({ apiBase, onNavigateToTrace }: RAGCompanionVie
                     {msg.role === 'assistant' && (
                       <div className="text-[10px] font-semibold tracking-wider text-[#7A7870] uppercase mb-1.5 flex items-center justify-between">
                         <span>RAG Assistant</span>
-                        <span>{msg.timestamp}</span>
+                        <span className="font-mono">{msg.timestamp}</span>
                       </div>
                     )}
                     <p className="whitespace-pre-wrap">{msg.content}</p>
@@ -354,22 +356,22 @@ export function RAGCompanionView({ apiBase, onNavigateToTrace }: RAGCompanionVie
                           <span
                             className={`w-2 h-2 rounded-full ${
                               msg.verification.overall_status === 'Verified'
-                                ? 'bg-[#91FE00]'
-                                : 'bg-[#E11D48]'
+                                ? 'bg-[#15803D]'
+                                : 'bg-[#DC2626]'
                             }`}
                           />
                           <span
                             className={`text-[11px] font-medium ${
                               msg.verification.overall_status === 'Verified'
-                                ? 'text-[#3E7B00]'
-                                : 'text-[#E11D48]'
+                                ? 'text-[#15803D]'
+                                : 'text-[#DC2626]'
                             }`}
                           >
                             {msg.verification.overall_status === 'Verified'
                               ? '100% Grounded'
                               : 'Hallucination Intercepted'}
                           </span>
-                          <span className="text-[10px] text-[#7A7870]">
+                          <span className="text-[10px] text-[#7A7870] font-mono">
                             ({msg.verification.supported_claims}/{msg.verification.total_claims} claims)
                           </span>
                         </div>
@@ -377,7 +379,7 @@ export function RAGCompanionView({ apiBase, onNavigateToTrace }: RAGCompanionVie
                         <button
                           type="button"
                           onClick={() => setSelectedMessageId(msg.id)}
-                          className="text-[11px] font-medium text-[#BD47F2] hover:underline cursor-pointer"
+                          className="text-[11px] font-medium text-[#0C0C12] underline decoration-[#D9D4C7] underline-offset-4 hover:decoration-[#0C0C12] cursor-pointer"
                         >
                           Inspect Evidence →
                         </button>
@@ -402,7 +404,7 @@ export function RAGCompanionView({ apiBase, onNavigateToTrace }: RAGCompanionVie
                 onChange={(e) => setActiveContext(e.target.value)}
                 placeholder="Paste retrieved source context chunks here..."
                 rows={3}
-                className="w-full mt-2 p-2.5 bg-white border border-[#D9D4C7] rounded-xl text-xs text-[#0C0C12] placeholder-[#9A9890] focus:outline-none focus:ring-1 focus:ring-[#BD47F2]"
+                className="w-full mt-2 p-2.5 bg-white border border-[#D9D4C7] rounded-xl text-xs text-[#0C0C12] placeholder-[#9A9890] focus:outline-none focus:ring-1 focus:ring-[#0C0C12]/20 focus:border-[#0C0C12]"
               />
             </details>
 
@@ -418,7 +420,7 @@ export function RAGCompanionView({ apiBase, onNavigateToTrace }: RAGCompanionVie
                   }
                 }}
                 placeholder="Ask a question against the retrieved knowledge..."
-                className="flex-1 px-4 py-2.5 bg-white border border-[#D9D4C7] rounded-full text-xs md:text-sm text-[#0C0C12] placeholder-[#9A9890] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#BD47F2]/20 focus:border-[#BD47F2]"
+                className="flex-1 px-4 py-2.5 bg-white border border-[#D9D4C7] rounded-full text-xs md:text-sm text-[#0C0C12] placeholder-[#9A9890] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0C0C12]/15 focus:border-[#0C0C12]"
               />
               <button
                 type="button"
@@ -446,14 +448,48 @@ export function RAGCompanionView({ apiBase, onNavigateToTrace }: RAGCompanionVie
           </div>
 
           {!activeVerification ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-[#7A7870] space-y-2">
-              <div className="w-9 h-9 rounded-full bg-[#E8E4DA]/50 flex items-center justify-center text-[#7A7870]">
-                🔍
+            <div className="flex-1 flex flex-col justify-between p-4 space-y-4">
+              <div className="flex flex-col items-center justify-center text-center py-6 text-[#7A7870] space-y-2">
+                <div className="w-10 h-10 rounded-full bg-[#E8E4DA]/50 flex items-center justify-center text-[#47453F]">
+                  <svg className="w-5 h-5" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+                    <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+                <p className="text-xs font-semibold text-[#0C0C12]">Verification Standby</p>
+                <p className="text-[11px] max-w-xs text-[#7A7870]">
+                  Submit a prompt or click "Inspect Evidence" on an assistant message to examine the claim-level cross-attention evidence.
+                </p>
               </div>
-              <p className="text-xs font-medium text-[#0C0C12]">No Claim Selected</p>
-              <p className="text-[11px] max-w-xs">
-                Send a message or click "Inspect Evidence" on an assistant response to view atomic claim decomposition and NLI entailment scores.
-              </p>
+
+              {/* Architectural Verification Pipeline Flow Preview */}
+              <div className="p-4 bg-white rounded-2xl border border-[#D9D4C7]/70 space-y-3">
+                <span className="text-[10px] font-semibold text-[#7A7870] uppercase tracking-wider block">
+                  Inline Pipeline Topology
+                </span>
+                <div className="space-y-2 text-xs">
+                  <div className="flex items-center gap-2.5 p-2 rounded-xl bg-[#FAF8F3] border border-[#EBE7DC]">
+                    <span className="w-5 h-5 rounded-full bg-[#0C0C12] text-white text-[10px] font-mono flex items-center justify-center shrink-0">1</span>
+                    <div className="overflow-hidden">
+                      <div className="font-medium text-[#0C0C12] text-[11px]">Claim Segmentation</div>
+                      <div className="text-[10px] text-[#7A7870]">Splits LLM outputs into verifiable assertions</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2.5 p-2 rounded-xl bg-[#FAF8F3] border border-[#EBE7DC]">
+                    <span className="w-5 h-5 rounded-full bg-[#0C0C12] text-white text-[10px] font-mono flex items-center justify-center shrink-0">2</span>
+                    <div className="overflow-hidden">
+                      <div className="font-medium text-[#0C0C12] text-[11px]">DeBERTa-v3 Cross-Encoder</div>
+                      <div className="text-[10px] text-[#7A7870]">Scores $[P_E, P_N, P_C]$ vs reference context</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2.5 p-2 rounded-xl bg-[#FAF8F3] border border-[#EBE7DC]">
+                    <span className="w-5 h-5 rounded-full bg-[#0C0C12] text-white text-[10px] font-mono flex items-center justify-center shrink-0">3</span>
+                    <div className="overflow-hidden">
+                      <div className="font-medium text-[#0C0C12] text-[11px]">Groundedness Gating</div>
+                      <div className="text-[10px] text-[#7A7870]">Passes verified facts; blocks hallucinations</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="space-y-4 flex-1 overflow-y-auto overscroll-contain max-h-[520px] pr-1">
@@ -464,10 +500,10 @@ export function RAGCompanionView({ apiBase, onNavigateToTrace }: RAGCompanionVie
                     Verdict Status
                   </span>
                   <span
-                    className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    className={`px-2.5 py-0.5 rounded-full text-xs font-semibold ${
                       activeVerification.overall_status === 'Verified'
-                        ? 'bg-[#E8F8D8] text-[#2C6200]'
-                        : 'bg-[#FFE4E6] text-[#E11D48]'
+                        ? 'bg-[#E8F8D6] text-[#15803D]'
+                        : 'bg-[#FEE2E2] text-[#991B1B]'
                     }`}
                   >
                     {activeVerification.overall_status}
@@ -475,21 +511,21 @@ export function RAGCompanionView({ apiBase, onNavigateToTrace }: RAGCompanionVie
                 </div>
 
                 <div className="grid grid-cols-3 gap-2 pt-2 border-t border-[#F1EFEA] text-center">
-                  <div className="p-2 bg-[#FAF8F3] rounded-xl">
+                  <div className="p-2 bg-[#FAF8F3] rounded-xl border border-[#EBE7DC]">
                     <div className="text-[10px] text-[#7A7870]">Groundedness</div>
-                    <div className="text-sm font-semibold text-[#0C0C12]">
+                    <div className="text-sm font-semibold text-[#0C0C12] font-mono tabular-nums">
                       {activeVerification.groundedness_score}%
                     </div>
                   </div>
-                  <div className="p-2 bg-[#FAF8F3] rounded-xl">
+                  <div className="p-2 bg-[#FAF8F3] rounded-xl border border-[#EBE7DC]">
                     <div className="text-[10px] text-[#7A7870]">Supported</div>
-                    <div className="text-sm font-semibold text-[#2C6200]">
+                    <div className="text-sm font-semibold text-[#15803D] font-mono tabular-nums">
                       {activeVerification.supported_claims}
                     </div>
                   </div>
-                  <div className="p-2 bg-[#FAF8F3] rounded-xl">
+                  <div className="p-2 bg-[#FAF8F3] rounded-xl border border-[#EBE7DC]">
                     <div className="text-[10px] text-[#7A7870]">Latency</div>
-                    <div className="text-sm font-semibold text-[#0C0C12]">
+                    <div className="text-sm font-semibold text-[#0C0C12] font-mono tabular-nums">
                       {activeVerification.latency_ms} ms
                     </div>
                   </div>
@@ -512,21 +548,31 @@ export function RAGCompanionView({ apiBase, onNavigateToTrace }: RAGCompanionVie
                         "{claim.claim_text}"
                       </p>
                       <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-medium shrink-0 ${
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-semibold shrink-0 ${
                           claim.status === 'Supported'
-                            ? 'bg-[#E8F8D8] text-[#2C6200]'
+                            ? 'bg-[#E8F8D6] text-[#15803D]'
+                            : (claim.status.toLowerCase().includes('entity') || (claim.unmatched_entities && claim.unmatched_entities.length > 0))
+                            ? 'bg-[#FEE2E2] text-[#991B1B]'
                             : claim.status.includes('Contradiction')
-                            ? 'bg-[#FFE4E6] text-[#E11D48]'
-                            : 'bg-[#FEF3C7] text-[#B45309]'
+                            ? 'bg-[#FEE2E2] text-[#991B1B]'
+                            : 'bg-[#FEF3C7] text-[#92400E]'
                         }`}
                       >
-                        {claim.status}
+                        {claim.unmatched_entities && claim.unmatched_entities.length > 0 ? 'Entity Mismatch' : claim.status}
                       </span>
                     </div>
 
+                    {/* Entity Violation Banner if present */}
+                    {claim.unmatched_entities && claim.unmatched_entities.length > 0 && (
+                      <div className="p-2 bg-[#FEF2F2] border border-[#FECACA] rounded-lg text-[11px] text-[#991B1B] leading-relaxed">
+                        <span className="font-semibold">Entity Mismatch: </span>
+                        <span>Unmatched entity {claim.unmatched_entities.map((e) => `"${e}"`).join(', ')} has no antecedent in retrieved context.</span>
+                      </div>
+                    )}
+
                     {/* NLI Entailment Logits */}
                     {claim.nli_logits && (
-                      <div className="grid grid-cols-3 gap-1 pt-1.5 border-t border-[#F1EFEA] text-[10px] text-[#7A7870]">
+                      <div className="grid grid-cols-3 gap-1 pt-1.5 border-t border-[#F1EFEA] text-[10px] text-[#7A7870] font-mono tabular-nums">
                         <div>Entail: {(claim.nli_logits.entailment * 100).toFixed(1)}%</div>
                         <div>Neut: {(claim.nli_logits.neutral * 100).toFixed(1)}%</div>
                         <div>Contra: {(claim.nli_logits.contradiction * 100).toFixed(1)}%</div>
@@ -535,9 +581,9 @@ export function RAGCompanionView({ apiBase, onNavigateToTrace }: RAGCompanionVie
 
                     {/* Evidence Snippet */}
                     {claim.evidence_span && (
-                      <div className="p-2 bg-[#FAF8F3] rounded-lg text-[11px] text-[#4A4842] border-l-2 border-[#BD47F2]">
-                        <span className="font-medium text-[#0C0C12]">Proof Span: </span>
-                        {claim.evidence_span}
+                      <div className="p-2.5 bg-[#FAF8F3] rounded-xl text-[11px] text-[#4A4842] border border-[#E5E1D8]">
+                        <span className="font-semibold text-[#0C0C12]">Proof Span: </span>
+                        <span className="italic font-serif">"{claim.evidence_span}"</span>
                       </div>
                     )}
                   </div>
@@ -549,7 +595,7 @@ export function RAGCompanionView({ apiBase, onNavigateToTrace }: RAGCompanionVie
                 <button
                   type="button"
                   onClick={() => onNavigateToTrace(activeVerification.request_id)}
-                  className="w-full py-2.5 px-3 bg-[#E8E4DA]/60 hover:bg-[#E8E4DA] border border-[#D9D4C7] rounded-xl text-xs font-medium text-[#0C0C12] transition-colors flex items-center justify-center gap-1.5"
+                  className="w-full py-2.5 px-3 bg-white hover:bg-[#F6F5F1] border border-[#D9D4C7] rounded-xl text-xs font-medium text-[#0C0C12] transition-colors flex items-center justify-center gap-1.5 shadow-xs"
                 >
                   <span>Inspect Audit Record in Trace Explorer</span>
                   <span>→</span>
