@@ -58,15 +58,34 @@ class ClaimDecomposer:
 
         claims: List[str] = []
         for sent in sentences:
-            # 2. Sub-split compound sentences on semicolons and coordinating conjunctions
-            sub_clauses = re.split(r';|\b(?:and|but|whereas)\b', sent)
-            for clause in sub_clauses:
-                # 3. Strip trailing/leading punctuation like commas and whitespace
-                cleaned = clause.strip().strip(",;:").strip()
+            # 2. Sub-split compound sentences on semicolons
+            chunks = [c.strip() for c in sent.split(";") if c.strip()]
+            for chunk in chunks:
+                chunk_doc = self.nlp(chunk)
+                split_points = []
+                for token in chunk_doc:
+                    # Conjunctions (and, but, whereas) only split if following clause has subject + verb
+                    if (token.dep_ in {"cc", "mark"} or token.pos_ in {"CCONJ", "SCONJ"}) and token.text.lower() in {"and", "but", "whereas"}:
+                        has_subj_after = any(t.dep_ in {"nsubj", "nsubjpass"} for t in chunk_doc[token.i+1:])
+                        has_verb_after = any(t.pos_ in {"VERB", "AUX"} for t in chunk_doc[token.i+1:])
+                        if has_subj_after and has_verb_after:
+                            split_points.append(token.idx)
 
-                # 4. Retain claims that have at least 3 words to avoid trivial fragments
-                if len(cleaned.split()) >= 3:
-                    claims.append(cleaned)
+                if not split_points:
+                    cleaned = chunk.strip().strip(",;:").strip()
+                    if len(cleaned.split()) >= 3:
+                        claims.append(cleaned)
+                else:
+                    last_idx = 0
+                    for pt in split_points:
+                        sub = chunk[last_idx:pt].strip().strip(",;:").strip()
+                        if len(sub.split()) >= 3:
+                            claims.append(sub)
+                        last_idx = pt
+                    sub = chunk[last_idx:].strip()
+                    sub = re.sub(r"^(?:and|but|whereas)\s+", "", sub, flags=re.I).strip().strip(",;:").strip()
+                    if len(sub.split()) >= 3:
+                        claims.append(sub)
 
-        # 5. Fallback: if splitting filtered out everything, return the cleaned raw text
+        # 3. Fallback: if splitting filtered out everything, return the cleaned raw text
         return claims if claims else [text.strip()]

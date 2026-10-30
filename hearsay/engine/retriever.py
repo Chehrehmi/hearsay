@@ -5,6 +5,10 @@ Indexes retrieved source context chunks by sentence and identifies top-k candida
 evidence spans using semantic vector similarity with all-MiniLM-L6-v2.
 """
 
+import os
+os.environ.setdefault("HF_HUB_OFFLINE", "1")
+os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+
 from typing import List, Dict, Any, Optional
 from sentence_transformers import SentenceTransformer, util
 import spacy

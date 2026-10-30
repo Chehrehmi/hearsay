@@ -42,6 +42,7 @@ class ClaimVerdict(BaseModel):
     evidence_span: Optional[str] = Field(default=None,description="Specific sentence retrieved from context as proof")
     source_chunk_id: Optional[str] = Field(default=None,description="ID of chunk containing evidence")
     nli_logits: Dict[str, float] = Field(default_factory=dict,description="Raw NLI probabilities")
+    unmatched_entities: List[str] = Field(default_factory=list, description="Named entities in claim absent from source context")
 
 class VerificationResult(BaseModel):
     """ Complete end-to-end verification pipeline output."""

@@ -111,3 +111,25 @@ def test_short_fragment_filtering_and_fallback(decomposer):
     claims = decomposer.decompose(short_text)
     assert len(claims) == 1
     assert claims[0] == "It works."
+
+
+def test_compound_noun_and_range_preservation(decomposer):
+    """Verify that coordinating conjunctions in compound nouns or ranges are not shredded."""
+    # 1. Compound subject
+    t1 = "Alice and Bob visited Paris in 2020."
+    c1 = decomposer.decompose(t1)
+    assert len(c1) == 1
+    assert "Alice and Bob" in c1[0]
+
+    # 2. Compound noun phrase
+    t2 = "The merger between Disney and Fox was approved."
+    c2 = decomposer.decompose(t2)
+    assert len(c2) == 1
+    assert "Disney and Fox" in c2[0]
+
+    # 3. Numeric range
+    t3 = "He invested between $10 and $20 million in tech."
+    c3 = decomposer.decompose(t3)
+    assert len(c3) == 1
+    assert "$10 and $20 million" in c3[0]
+

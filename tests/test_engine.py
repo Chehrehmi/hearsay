@@ -185,3 +185,124 @@ def test_pydantic_protocol_validation(shared_nlp, mock_retriever):
     assert pydantic_obj.overall_status == raw_result["overall_status"]
     assert pydantic_obj.groundedness_score == raw_result["groundedness_score"]
     assert len(pydantic_obj.claims) == len(raw_result["claims"])
+
+
+def test_entity_mismatch_interception(shared_nlp, mock_retriever):
+    """Verify that ungrounded named entities override naive NLI entailment into Ungrounded Entity."""
+    engine = HearsayEngine(
+        decomposer=ClaimDecomposer(nlp=shared_nlp),
+        retriever=mock_retriever,
+        verifier=MockNLIClassifier(mode="supported"), # Naive NLI says Supported
+    )
+    # Claim contains ungrounded entity 'Annie Frankson'
+    result = engine.verify(
+        response_text="Annie Frankson was an author.",
+        source_info="Anne Frank died in 1945.",
+    )
+    assert result["overall_status"] == "Hallucination Detected"
+    assert result["groundedness_score"] == 0.0
+    assert result["claims"][0]["status"] == "Unsupported (Ungrounded Entity)"
+    assert "Annie Frankson" in result["claims"][0]["unmatched_entities"]
+
+
+def test_extended_entity_types_interception(shared_nlp, mock_retriever):
+    """Verify that ungrounded NORP, PERCENT, QUANTITY, and ORDINAL entities are intercepted."""
+    engine = HearsayEngine(
+        decomposer=ClaimDecomposer(nlp=shared_nlp),
+        retriever=mock_retriever,
+        verifier=MockNLIClassifier(mode="supported"),
+    )
+    # 1. NORP (nationality) mismatch
+    r1 = engine.verify("Kant was a French philosopher.", "Kant was a German philosopher.")
+    assert "French" in r1["claims"][0]["unmatched_entities"]
+    assert r1["claims"][0]["status"] == "Unsupported (Ungrounded Entity)"
+
+    # 2. PERCENT mismatch
+    r2 = engine.verify("Revenue grew by 50 percent in 2023.", "Revenue grew by 5 percent in 2023.")
+    assert any("50" in ent for ent in r2["claims"][0]["unmatched_entities"])
+    assert r2["claims"][0]["status"] == "Unsupported (Ungrounded Entity)"
+
+    # 3. QUANTITY mismatch
+    r3 = engine.verify("Aircraft reached 900 mph.", "Aircraft reached 500 mph.")
+    assert any("900" in ent for ent in r3["claims"][0]["unmatched_entities"])
+    assert r3["claims"][0]["status"] == "Unsupported (Ungrounded Entity)"
+
+
+def test_ordinal_date_grounding(shared_nlp, mock_retriever):
+    """Verify natural ordinal date verbalization ('15th of August') matches numeric date ('August 15')."""
+    engine = HearsayEngine(
+        decomposer=ClaimDecomposer(nlp=shared_nlp),
+        retriever=mock_retriever,
+        verifier=MockNLIClassifier(mode="supported"),
+    )
+    source = "India achieved independence from British rule on August 15, 1947, following the passage of the Indian Independence Act."
+
+    # 1. Grounded ordinal format
+    r_valid = engine.verify("Independence was achieved by India on 15th of August 1947.", source)
+    assert r_valid["claims"][0]["unmatched_entities"] == []
+    assert r_valid["claims"][0]["status"] == "Supported"
+    assert r_valid["overall_status"] == "Verified"
+
+    # 2. Hallucinated ordinal day
+    r_halluc = engine.verify("Independence was achieved by India on 16th of August 1947.", source)
+    assert any("16" in ent for ent in r_halluc["claims"][0]["unmatched_entities"])
+    assert r_halluc["claims"][0]["status"] == "Unsupported (Ungrounded Entity)"
+    assert r_halluc["overall_status"] == "Hallucination Detected"
+
+
+def test_cross_sentence_pronoun_grounding(shared_nlp, mock_retriever):
+    """Verify that multi-sentence passage premise resolves pronoun coreference."""
+    engine = HearsayEngine(
+        decomposer=ClaimDecomposer(nlp=shared_nlp),
+        retriever=mock_retriever,
+        verifier=MockNLIClassifier(mode="supported"),
+    )
+    source = "Steve Jobs co-founded Apple in 1976. He served as chief executive officer until 2011."
+    claim = "Steve Jobs served as chief executive officer of Apple until 2011."
+    res = engine.verify(claim, source)
+    assert res["claims"][0]["status"] == "Supported"
+    assert res["overall_status"] == "Verified"
+
+
+def test_currency_symbol_verbalization_grounding(shared_nlp, mock_retriever):
+    """Verify that currency symbols ($50M) match verbalized words (50 million dollars)."""
+    engine = HearsayEngine(
+        decomposer=ClaimDecomposer(nlp=shared_nlp),
+        retriever=mock_retriever,
+        verifier=MockNLIClassifier(mode="supported"),
+    )
+    source = "The total acquisition cost was $50 million in 2021."
+    claim = "The total acquisition cost was 50 million dollars in 2021."
+    res = engine.verify(claim, source)
+    assert res["claims"][0]["unmatched_entities"] == []
+    assert res["claims"][0]["status"] == "Supported"
+    assert res["overall_status"] == "Verified"
+
+
+def test_dotted_acronym_and_decimal_grounding(shared_nlp, mock_retriever):
+    """Verify that dotted acronyms (U.S. vs US) and decimals (.0) are canonicalized correctly."""
+    engine = HearsayEngine(
+        decomposer=ClaimDecomposer(nlp=shared_nlp),
+        retriever=mock_retriever,
+        verifier=MockNLIClassifier(mode="supported"),
+    )
+    # 1. Claim U.S. vs Source US
+    source1 = "The US government approved the bill in 2024."
+    claim1 = "The U.S. government approved the bill in 2024."
+    r1 = engine.verify(claim1, source1)
+    assert r1["claims"][0]["unmatched_entities"] == []
+    assert r1["claims"][0]["status"] == "Supported"
+
+    # 2. Claim US vs Source U.S.
+    source2 = "The U.S. government approved the bill in 2024."
+    claim2 = "The US government approved the bill in 2024."
+    r2 = engine.verify(claim2, source2)
+    assert r2["claims"][0]["unmatched_entities"] == []
+    assert r2["claims"][0]["status"] == "Supported"
+
+    # 3. Decimal trailing zero (.0)
+    source3 = "The inflation rate reached 5% in 2023."
+    claim3 = "The inflation rate reached 5.0% in 2023."
+    r3 = engine.verify(claim3, source3)
+    assert r3["claims"][0]["unmatched_entities"] == []
+    assert r3["claims"][0]["status"] == "Supported"
