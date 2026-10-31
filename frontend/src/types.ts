@@ -85,4 +85,7 @@ export interface RAGChatMessage {
   contextUsed?: string;
   verification?: VerificationResult | null;
   isLoading?: boolean;
+  correctedContent?: string;   // re-grounded response after auto-correction
+  autoCorrectTag?: boolean;    // true when Case B auto-correction fired
+  showOriginal?: boolean;      // diff toggle: true = show original hallucinated response
 }

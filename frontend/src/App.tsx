@@ -1,363 +1,159 @@
-import { useState, useEffect, useRef } from 'react';
-import type { MetricSummary } from './types';
-import { TelemetryKpiBar } from './components/TelemetryKpiBar';
-import { SandboxView } from './components/SandboxView';
-import { AdversarialMatrixView } from './components/AdversarialMatrixView';
-import { TraceExplorerView } from './components/TraceExplorerView';
-import { AnalyticsView } from './components/AnalyticsView';
-import { RAGCompanionView } from './components/RAGCompanionView';
+import { useState, useEffect } from 'react';
+import type { VerificationResult } from './types';
+import { MinimalRAGView } from './components/MinimalRAGView';
+import { HearsayDrawer } from './components/HearsayDrawer';
+import { ConversationSidebar } from './components/ConversationSidebar';
+import { SettingsModal } from './components/SettingsModal';
+import {
+  createConversation,
+  listConversations,
+  saveConversation,
+  type Conversation,
+} from './lib/conversationStore';
 
 export function App() {
-  const [activeTab, setActiveTab] = useState<'companion' | 'sandbox' | 'adversarial' | 'traces' | 'analytics'>('companion');
-  const [metrics, setMetrics] = useState<MetricSummary | null>(null);
-  const [isOnline, setIsOnline] = useState<boolean>(false);
-  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
-  const [globalSearch, setGlobalSearch] = useState<string>('');
-  const [isMac, setIsMac] = useState<boolean>(true);
-  const [isResetting, setIsResetting] = useState<boolean>(false);
+  const apiBase =
+    typeof window !== 'undefined' && window.location.port === '5173'
+      ? 'http://localhost:8000'
+      : '';
 
-  const searchInputRef = useRef<HTMLInputElement>(null);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [activeConversationId, setActiveConversationId] = useState<string>('');
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerVerification, setDrawerVerification] = useState<VerificationResult | null>(null);
+  const [isOnline, setIsOnline] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
-  // Platform detection for Cmd+K vs Ctrl+K
+  // Initialise: load or create first conversation
   useEffect(() => {
-    if (typeof navigator !== 'undefined') {
-      const platform = (navigator as any).userAgentData?.platform || navigator.platform || navigator.userAgent || '';
-      setIsMac(/Mac|iPhone|iPod|iPad/i.test(platform));
+    const existing = listConversations();
+    if (existing.length > 0) {
+      setConversations(existing);
+      setActiveConversationId(existing[0].id);
+    } else {
+      const conv = createConversation();
+      setConversations([conv]);
+      setActiveConversationId(conv.id);
     }
   }, []);
 
-  // Global keyboard shortcut: Cmd+K / Ctrl+K to focus search
+  // Gateway health poll
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        searchInputRef.current?.focus();
-        searchInputRef.current?.select();
-      }
-      if (e.key === 'Escape' && document.activeElement === searchInputRef.current) {
-        searchInputRef.current?.blur();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
-  const apiBase = typeof window !== 'undefined' && window.location.port === '5173' ? 'http://localhost:8000' : '';
-
-  const fetchMetrics = async () => {
-    setIsRefreshing(true);
-    try {
-      const res = await fetch(`${apiBase}/v1/metrics`);
-      if (res.ok) {
-        const data = await res.json();
-        setMetrics(data);
-        setIsOnline(true);
-      } else {
+    const check = async () => {
+      try {
+        const r = await fetch(`${apiBase}/health`);
+        setIsOnline(r.ok);
+      } catch {
         setIsOnline(false);
       }
-    } catch {
-      setIsOnline(false);
-    } finally {
-      setIsRefreshing(false);
-    }
+    };
+    check();
+    const id = setInterval(check, 10_000);
+    return () => clearInterval(id);
+  }, [apiBase]);
+
+  const handleNewConversation = () => {
+    const conv = createConversation();
+    setConversations(listConversations());
+    setActiveConversationId(conv.id);
+    setDrawerVerification(null);
+    setDrawerOpen(false);
   };
 
-  useEffect(() => {
-    fetchMetrics();
-    const interval = setInterval(fetchMetrics, 10000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const handleExportAuditLogs = () => {
-    window.open(`${apiBase}/v1/traces?limit=500`, '_blank');
+  const handleSelectConversation = (id: string) => {
+    setActiveConversationId(id);
+    setDrawerVerification(null);
+    setDrawerOpen(false);
   };
 
-  const handleResetSession = async () => {
-    if (window.confirm("Reset all audit traces and KPI telemetry to start a fresh demo session?")) {
-      setIsResetting(true);
-      try {
-        await fetch(`${apiBase}/v1/traces/clear`, { method: 'POST' });
-        await fetchMetrics();
-      } catch (err) {
-        console.error("Failed to reset session traces:", err);
-      } finally {
-        setIsResetting(false);
-      }
-    }
+  const handleUpdateConversation = (conv: Conversation) => {
+    saveConversation(conv);
+    setConversations(listConversations());
   };
+
+  const handleNewVerification = (v: VerificationResult | null) => {
+    setDrawerVerification(v);
+    if (v) setDrawerOpen(true);
+  };
+
+  const activeConversation =
+    conversations.find(c => c.id === activeConversationId) ?? null;
 
   return (
-    <div className="p-3 md:p-6 lg:p-8 flex items-center justify-center min-h-screen">
-      {/* RevenueX Porcelain Shell */}
-      <div className="dashboard-shell w-full max-w-[1580px] rounded-[38px] shadow-float overflow-hidden flex flex-col lg:flex-row min-h-[min(920px,calc(100dvh-2.5rem))] lg:min-h-[880px]">
-        {/* Left Sidebar */}
-        <aside className="w-full lg:w-[260px] xl:w-[280px] bg-[#E8E4DA]/60 border-r border-[#D9D4C7]/70 p-6 flex flex-col justify-between shrink-0">
-          <div className="space-y-6">
-            {/* Logo & Brand Wordmark */}
-            <div className="flex items-center gap-3 px-2 pt-1">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-[#0C0C12] shrink-0" style={{ width: '32px', height: '32px' }}>
-                <svg className="w-7 h-7" width="28" height="28" fill="none" viewBox="0 0 28 28">
-                  <path d="M14 4C14.8 4 15.5 4.7 15.5 5.5V8.5C15.5 9.3 14.8 10 14 10C13.2 10 12.5 9.3 12.5 8.5V5.5C12.5 4.7 13.2 4 14 4Z" fill="#0C0C12" />
-                  <path d="M14 18C14.8 18 15.5 18.7 15.5 19.5V22.5C15.5 23.3 14.8 24 14 24C13.2 24 12.5 23.3 12.5 22.5V19.5C12.5 18.7 13.2 18 14 18Z" fill="#0C0C12" />
-                  <path d="M5.5 12.5H8.5C9.3 12.5 10 13.2 10 14C10 14.8 9.3 15.5 8.5 15.5H5.5C4.7 15.5 4 14.8 4 14C4 13.2 4.7 12.5 5.5 12.5Z" fill="#0C0C12" />
-                  <path d="M19.5 12.5H22.5C23.3 12.5 24 13.2 24 14C24 14.8 23.3 15.5 22.5 15.5H19.5C18.7 15.5 18 14.8 18 14C18 13.2 18.7 12.5 19.5 12.5Z" fill="#0C0C12" />
-                  <circle cx="14" cy="14" fill="#0C0C12" r="3.2" />
-                  <circle cx="8" cy="8" fill="#0C0C12" r="2" />
-                  <circle cx="20" cy="8" fill="#0C0C12" r="2" />
-                  <circle cx="8" cy="20" fill="#0C0C12" r="2" />
-                  <circle cx="20" cy="20" fill="#0C0C12" r="2" />
-                </svg>
-              </div>
-              <span className="font-serif text-[22px] font-semibold tracking-tight text-[#0C0C12]">
-                Hearsay
-              </span>
-            </div>
+    <div className="min-h-screen bg-[#F5F3EE] flex flex-col font-sans">
+      {/* Header */}
+      <header className="h-14 border-b border-[#D9D4C7]/70 bg-[#FAF8F3] flex items-center px-5 shrink-0 gap-4">
+        {/* Wordmark */}
+        <div className="flex items-center gap-2.5">
+          <svg width="22" height="22" fill="none" viewBox="0 0 28 28" className="shrink-0">
+            <path d="M14 4C14.8 4 15.5 4.7 15.5 5.5V8.5C15.5 9.3 14.8 10 14 10C13.2 10 12.5 9.3 12.5 8.5V5.5C12.5 4.7 13.2 4 14 4Z" fill="#0C0C12" />
+            <path d="M14 18C14.8 18 15.5 18.7 15.5 19.5V22.5C15.5 23.3 14.8 24 14 24C13.2 24 12.5 23.3 12.5 22.5V19.5C12.5 18.7 13.2 18 14 18Z" fill="#0C0C12" />
+            <path d="M5.5 12.5H8.5C9.3 12.5 10 13.2 10 14C10 14.8 9.3 15.5 8.5 15.5H5.5C4.7 15.5 4 14.8 4 14C4 13.2 4.7 12.5 5.5 12.5Z" fill="#0C0C12" />
+            <path d="M19.5 12.5H22.5C23.3 12.5 24 13.2 24 14C24 14.8 23.3 15.5 22.5 15.5H19.5C18.7 15.5 18 14.8 18 14C18 13.2 18.7 12.5 19.5 12.5Z" fill="#0C0C12" />
+            <circle cx="14" cy="14" fill="#0C0C12" r="3.2" />
+            <circle cx="8" cy="8" fill="#0C0C12" r="2" />
+            <circle cx="20" cy="8" fill="#0C0C12" r="2" />
+            <circle cx="8" cy="20" fill="#0C0C12" r="2" />
+            <circle cx="20" cy="20" fill="#0C0C12" r="2" />
+          </svg>
+          <span className="font-serif text-[18px] font-semibold tracking-tight text-[#0C0C12]">
+            Hearsay
+          </span>
+          <span className="text-[11px] text-[#9A9890] font-medium hidden sm:inline">
+            RAG Verification
+          </span>
+        </div>
 
-            {/* Main Navigation */}
-            <div className="space-y-1">
-              <p className="text-[11px] font-medium tracking-wider text-[#7A7870] uppercase px-3 mb-2">
-                Main
-              </p>
-              <nav aria-label="Main Navigation" className="space-y-1">
-                <button
-                  onClick={() => setActiveTab('companion')}
-                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm transition-colors duration-150 ${
-                    activeTab === 'companion'
-                      ? 'bg-white shadow-sm font-medium text-[#0C0C12] border border-[#E5E1D8]/60'
-                      : 'text-[#65635C] hover:text-[#0C0C12] hover:bg-white/40 font-normal'
-                  }`}
-                >
-                  <svg className={`w-4 h-4 shrink-0 ${activeTab === 'companion' ? 'text-[#0C0C12]' : 'text-[#7A7870]'}`} width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  <span>RAG Companion</span>
-                </button>
+        <div className="flex-1" />
 
-                <button
-                  onClick={() => setActiveTab('sandbox')}
-                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm transition-colors duration-150 ${
-                    activeTab === 'sandbox'
-                      ? 'bg-white shadow-sm font-medium text-[#0C0C12] border border-[#E5E1D8]/60'
-                      : 'text-[#65635C] hover:text-[#0C0C12] hover:bg-white/40 font-normal'
-                  }`}
-                >
-                  <svg className={`w-4 h-4 shrink-0 ${activeTab === 'sandbox' ? 'text-[#0C0C12]' : 'text-[#7A7870]'}`} width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <rect height="7" rx="1.5" width="7" x="3" y="3" />
-                    <rect height="7" rx="1.5" width="7" x="14" y="3" />
-                    <rect height="7" rx="1.5" width="7" x="14" y="14" />
-                    <rect height="7" rx="1.5" width="7" x="3" y="14" />
-                  </svg>
-                  <span>Verification Workbench</span>
-                </button>
+        {/* Gateway status */}
+        <div className="flex items-center gap-1.5 text-xs text-[#65635C]">
+          <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-[#15803D]' : 'bg-[#DC2626]'}`} />
+          <span className="hidden sm:inline">{isOnline ? 'Gateway live' : 'Gateway offline'}</span>
+        </div>
 
-                <button
-                  onClick={() => setActiveTab('adversarial')}
-                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm transition-colors duration-150 ${
-                    activeTab === 'adversarial'
-                      ? 'bg-white shadow-sm font-medium text-[#0C0C12] border border-[#E5E1D8]/60'
-                      : 'text-[#65635C] hover:text-[#0C0C12] hover:bg-white/40 font-normal'
-                  }`}
-                >
-                  <svg className={`w-4 h-4 shrink-0 ${activeTab === 'adversarial' ? 'text-[#0C0C12]' : 'text-[#7A7870]'}`} width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  <span>Adversarial Matrix</span>
-                </button>
-              </nav>
-            </div>
+        {/* Settings button */}
+        <button
+          type="button"
+          onClick={() => setSettingsOpen(true)}
+          className="p-2 rounded-lg text-[#65635C] hover:text-[#0C0C12] hover:bg-[#E8E4DA]/60 transition-colors"
+          title="API Key Settings"
+        >
+          <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+            <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      </header>
 
-            {/* Observability Section */}
-            <div className="space-y-1">
-              <p className="text-[11px] font-medium tracking-wider text-[#7A7870] uppercase px-3 mb-2">
-                Observability
-              </p>
-              <nav className="space-y-1">
-                <button
-                  onClick={() => setActiveTab('traces')}
-                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm transition-colors duration-150 ${
-                    activeTab === 'traces'
-                      ? 'bg-white shadow-sm font-medium text-[#0C0C12] border border-[#E5E1D8]/60'
-                      : 'text-[#65635C] hover:text-[#0C0C12] hover:bg-white/40 font-normal'
-                  }`}
-                >
-                  <svg className={`w-4 h-4 shrink-0 ${activeTab === 'traces' ? 'text-[#0C0C12]' : 'text-[#7A7870]'}`} width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-                    <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  <span>Trace Explorer</span>
-                </button>
-
-                <button
-                  onClick={() => setActiveTab('analytics')}
-                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-sm transition-colors duration-150 ${
-                    activeTab === 'analytics'
-                      ? 'bg-white shadow-sm font-medium text-[#0C0C12] border border-[#E5E1D8]/60'
-                      : 'text-[#65635C] hover:text-[#0C0C12] hover:bg-white/40 font-normal'
-                  }`}
-                >
-                  <svg className={`w-4 h-4 shrink-0 ${activeTab === 'analytics' ? 'text-[#0C0C12]' : 'text-[#7A7870]'}`} width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-                    <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                  <span>System Reliability</span>
-                </button>
-              </nav>
-            </div>
-
-            {/* Gateway Specification Box */}
-            <div className="space-y-1">
-              <p className="text-[11px] font-medium tracking-wider text-[#7A7870] uppercase px-3 mb-2">
-                Gateway Engine
-              </p>
-              <div className="p-3 bg-white/70 rounded-2xl border border-[#D9D4C7]/80 text-xs space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[#7A7870]">Engine:</span>
-                  <span className="font-medium text-[#0C0C12]">DeBERTa-v3 NLI</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[#7A7870]">Local Host:</span>
-                  <span className="font-mono text-[#0C0C12]">8000</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-[#7A7870]">Mode:</span>
-                  <span className="text-[#059669] font-medium">Fast Intercept</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </aside>
-
-        {/* Main Dashboard Stage */}
-        <main className="flex-1 p-5 md:p-8 overflow-y-auto space-y-7 bg-white/40">
-          {/* Top Header Bar */}
-          <section className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-            {/* Search Input with Dynamic ⌘ + K / Ctrl + K Shortcut */}
-            <div className="relative flex-1 max-w-xl">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-[#7D7B74]">
-                <svg className="w-4 h-4" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </div>
-              <input
-                ref={searchInputRef}
-                type="text"
-                value={globalSearch}
-                onChange={(e) => {
-                  setGlobalSearch(e.target.value);
-                  if (activeTab !== 'traces') {
-                    setActiveTab('traces');
-                  }
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && activeTab !== 'traces') {
-                    setActiveTab('traces');
-                  }
-                }}
-                placeholder="Search audit traces, ground truth citations, or claims..."
-                className="w-full pl-11 pr-24 py-2.5 bg-white rounded-full border border-black/5 text-xs md:text-sm text-[#0C0C12] placeholder-[#9A9890] shadow-sm focus:outline-none focus:ring-2 focus:ring-[#0C0C12]/15 focus:border-[#0C0C12] transition-colors"
-              />
-              <div className="absolute inset-y-0 right-0 pr-2.5 flex items-center">
-                <button
-                  type="button"
-                  onClick={() => searchInputRef.current?.focus()}
-                  className="text-[11px] font-medium text-[#7D7B74] hover:text-[#0C0C12] bg-[#F1EFEA] hover:bg-[#EAE7DF] border border-[#E2DFD7] px-2 py-0.5 rounded-lg flex items-center gap-1 transition-colors cursor-pointer select-none"
-                  title={isMac ? "Press ⌘K to search" : "Press Ctrl+K to search"}
-                >
-                  {isMac ? (
-                    <>
-                      <kbd className="font-sans text-[11px]">⌘</kbd>
-                      <kbd className="font-sans text-[11px]">K</kbd>
-                    </>
-                  ) : (
-                    <>
-                      <kbd className="font-sans text-[10px]">Ctrl</kbd>
-                      <kbd className="font-sans text-[10px]">K</kbd>
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Top Right Controls */}
-            <div className="flex items-center justify-end gap-3">
-              {/* Proxy Radar Indicator */}
-              <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white rounded-full border border-black/5 shadow-pill text-xs font-medium text-[#0C0C12]">
-                <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-[#15803D]' : 'bg-[#DC2626]'}`} />
-                <span>{isOnline ? 'Gateway: 8000 Live' : 'Gateway: Offline'}</span>
-              </div>
-
-              {/* Refresh Action */}
-              <button
-                onClick={fetchMetrics}
-                disabled={isRefreshing}
-                title="Refresh telemetry metrics from SQLite store"
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white rounded-full border border-black/5 shadow-pill text-xs font-medium text-[#0C0C12] hover:bg-[#F6F5F1] transition-colors"
-              >
-                <svg className={`w-3.5 h-3.5 text-[#5F5D56] ${isRefreshing ? 'animate-spin' : ''}`} width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                <span>Refresh</span>
-              </button>
-
-              {/* Reset Demo Action */}
-              <button
-                onClick={handleResetSession}
-                disabled={isResetting}
-                title="Clear all stored audit traces to restart fresh demo session"
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white rounded-full border border-black/5 shadow-pill text-xs font-medium text-[#7A7870] hover:text-[#DC2626] hover:bg-[#FEF2F2] transition-colors"
-              >
-                <svg className={`w-3.5 h-3.5 ${isResetting ? 'animate-spin' : ''}`} width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                  <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                <span>Reset</span>
-              </button>
-
-              {/* Export Data Action */}
-              <button
-                onClick={handleExportAuditLogs}
-                title="Export all SQLite audit traces as JSON dump"
-                className="flex items-center gap-2 bg-[#0C0C12] hover:bg-black text-white text-xs md:text-sm font-medium px-4 py-2.5 rounded-full shadow-sm transition-transform duration-150 active:scale-95"
-              >
-                <span>Export Logs</span>
-                <svg className="w-4 h-4" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
-                  <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </button>
-            </div>
-          </section>
-
-          {/* Telemetry KPI Bar */}
-          <TelemetryKpiBar metrics={metrics} isOnline={isOnline} />
-
-          {/* Tab Content Stage */}
-          <section className="space-y-6">
-            {activeTab === 'companion' && (
-              <RAGCompanionView
-                apiBase={apiBase}
-                onNavigateToTrace={(reqId) => {
-                  setGlobalSearch(reqId);
-                  setActiveTab('traces');
-                }}
-              />
-            )}
-            {activeTab === 'sandbox' && (
-              <SandboxView onVerificationSuccess={() => fetchMetrics()} />
-            )}
-            {activeTab === 'adversarial' && <AdversarialMatrixView />}
-            {activeTab === 'traces' && <TraceExplorerView initialSearch={globalSearch} />}
-            {activeTab === 'analytics' && <AnalyticsView metrics={metrics} />}
-          </section>
-
-          {/* Project System Footer */}
-          <footer className="pt-6 border-t border-[#D9D4C7]/70 flex flex-col sm:flex-row items-center justify-between text-xs text-[#7A7870] gap-2">
-            <div>
-              Hearsay · Explainable Runtime RAG Groundedness Gateway
-            </div>
-            <div>
-              Deterministic Verification & Telemetry Store
-            </div>
-          </footer>
-        </main>
+      {/* Body: 3-panel layout */}
+      <div className="flex flex-1 overflow-hidden">
+        <ConversationSidebar
+          conversations={conversations}
+          activeId={activeConversationId}
+          onSelect={handleSelectConversation}
+          onNew={handleNewConversation}
+        />
+        {activeConversation && (
+          <MinimalRAGView
+            conversation={activeConversation}
+            onUpdate={handleUpdateConversation}
+            onNewVerification={handleNewVerification}
+            onInspectMessage={setDrawerVerification}
+            apiBase={apiBase}
+          />
+        )}
+        <HearsayDrawer
+          verification={drawerVerification}
+          open={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          apiBase={apiBase}
+        />
       </div>
+
+      {settingsOpen && (
+        <SettingsModal apiBase={apiBase} onClose={() => setSettingsOpen(false)} />
+      )}
     </div>
   );
 }
