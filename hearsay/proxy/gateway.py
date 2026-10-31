@@ -560,3 +560,21 @@ from fastapi.staticfiles import StaticFiles
 frontend_dist = Path(__file__).resolve().parent.parent.parent / "frontend" / "dist"
 if frontend_dist.exists():
     app.mount("/", StaticFiles(directory=str(frontend_dist), html=True), name="frontend")
+
+
+def main():
+    """Run the Hearsay Gateway server with uvicorn."""
+    import uvicorn
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Hearsay Gateway Server")
+    parser.add_argument("--host", default="0.0.0.0", help="Bind host (default: 0.0.0.0)")
+    parser.add_argument("--port", type=int, default=8000, help="Bind port (default: 8000)")
+    parser.add_argument("--reload", action="store_true", help="Enable reload")
+    args, _ = parser.parse_known_args()
+
+    uvicorn.run("hearsay.proxy.gateway:app", host=args.host, port=args.port, reload=args.reload)
+
+
+if __name__ == "__main__":
+    main()
