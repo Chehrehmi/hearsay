@@ -343,3 +343,47 @@ def test_clear_all_traces():
     # Traces and metrics are now clean
     assert len(client.get("/v1/traces").json()) == 0
     assert client.get("/v1/metrics").json()["total_requests"] == 0
+
+
+# ── Settings endpoint tests ───────────────────────────────────────────────────
+
+def test_settings_save_and_status(tmp_path, monkeypatch):
+    monkeypatch.setenv("HEARSAY_ENV_PATH", str(tmp_path / ".env"))
+    r = client.post("/v1/settings", json={"provider": "gemini", "api_key": "test-key-abc"})
+    assert r.status_code == 200
+    assert r.json()["saved"] is True
+    assert r.json()["provider"] == "gemini"
+    s = client.get("/v1/settings/status")
+    assert s.status_code == 200
+    assert s.json()["gemini"] is True
+
+
+def test_settings_key_never_returned(tmp_path, monkeypatch):
+    monkeypatch.setenv("HEARSAY_ENV_PATH", str(tmp_path / ".env"))
+    client.post("/v1/settings", json={"provider": "openai", "api_key": "sk-secret"})
+    r = client.get("/v1/settings/status")
+    body = r.json()
+    assert "api_key" not in body
+    for v in body.values():
+        assert v in (True, False)
+
+
+def test_settings_unsupported_provider():
+    r = client.post("/v1/settings", json={"provider": "anthropic", "api_key": "key"})
+    assert r.status_code == 400
+
+
+def test_settings_empty_key_rejected():
+    r = client.post("/v1/settings", json={"provider": "gemini", "api_key": ""})
+    assert r.status_code == 400
+
+
+def test_settings_custom_provider_with_base_url(tmp_path, monkeypatch):
+    monkeypatch.setenv("HEARSAY_ENV_PATH", str(tmp_path / ".env"))
+    r = client.post("/v1/settings", json={
+        "provider": "custom",
+        "api_key": "my-custom-key",
+        "base_url": "https://api.example.com/v1",
+    })
+    assert r.status_code == 200
+    assert r.json()["saved"] is True

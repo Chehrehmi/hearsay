@@ -94,50 +94,97 @@ async def _generate_rag_completion(
     request: Request,
 ) -> str:
     """
-    Generates assistant completion either via live Gemini API (if key provided)
-    or via offline context extraction.
-    """
-    last_user_msg = messages[-1].get("content", "") if messages else "Summary request"
-    gemini_key = request.headers.get("x-gemini-key") or os.environ.get("GEMINI_API_KEY")
+    Generates assistant completion via any OpenAI-compatible API provider,
+    or falls back to offline extractive RAG.
 
-    # 1. Live Gemini Generation (if API key available)
-    if gemini_key and gemini_key.strip():
+    Priority for API key:
+      1. X-API-Key request header (any provider)
+      2. X-Gemini-Key request header (legacy)
+      3. SettingsStore (persisted .env / environment)
+    """
+    from hearsay.proxy.settings_store import SettingsStore
+    last_user_msg = messages[-1].get("content", "") if messages else "Summary request"
+
+    # Determine provider and key
+    provider = (request.headers.get("x-provider") or "gemini").lower()
+    api_key = (
+        request.headers.get("x-api-key")
+        or request.headers.get("x-gemini-key")
+        or SettingsStore().get_api_key(provider)
+        or os.environ.get("GEMINI_API_KEY")  # legacy fallback
+    )
+
+    # 1. Live provider generation (if API key available)
+    if api_key and api_key.strip():
         try:
             import json
-            import urllib.request
-            model_target = request.headers.get("x-gemini-model") or "gemini-2.5-flash"
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_target}:generateContent?key={gemini_key.strip()}"
-            
+            import urllib.request as _urllib_req
+
             ctx_text = context.source_info if context else "No context provided."
-            prompt_payload = {
-                "contents": [
-                    {
-                        "parts": [
-                            {
-                                "text": (
-                                    f"System: You are an enterprise RAG assistant. Answer the user's question accurately "
-                                    f"using ONLY the following reference context.\n\n"
-                                    f"Context: {ctx_text}\n\n"
-                                    f"User Question: {last_user_msg}"
-                                )
-                            }
-                        ]
-                    }
-                ],
-                "generationConfig": {"temperature": 0.2, "maxOutputTokens": 300}
-            }
-            req_data = json.dumps(prompt_payload).encode("utf-8")
-            http_req = urllib.request.Request(url, data=req_data, headers={"Content-Type": "application/json"})
-            with urllib.request.urlopen(http_req, timeout=10) as resp:
-                result_json = json.loads(resp.read().decode("utf-8"))
-                candidates = result_json.get("candidates", [])
-                if candidates:
-                    parts = candidates[0].get("content", {}).get("parts", [])
-                    if parts and "text" in parts[0]:
-                        return parts[0]["text"].strip()
+            system_prompt = (
+                "You are an enterprise RAG assistant. Answer the user's question "
+                "accurately using ONLY the following reference context.\n\n"
+                f"Context: {ctx_text}\n\nUser Question: {last_user_msg}"
+            )
+
+            if provider == "gemini":
+                model_target = request.headers.get("x-gemini-model") or "gemini-2.5-flash"
+                url = (
+                    f"https://generativelanguage.googleapis.com/v1beta/models/"
+                    f"{model_target}:generateContent?key={api_key.strip()}"
+                )
+                prompt_payload = {
+                    "contents": [{"parts": [{"text": system_prompt}]}],
+                    "generationConfig": {"temperature": 0.2, "maxOutputTokens": 300},
+                }
+                req_data = json.dumps(prompt_payload).encode("utf-8")
+                http_req = _urllib_req.Request(
+                    url, data=req_data, headers={"Content-Type": "application/json"}
+                )
+                with _urllib_req.urlopen(http_req, timeout=15) as resp:
+                    result_json = json.loads(resp.read().decode("utf-8"))
+                    candidates = result_json.get("candidates", [])
+                    if candidates:
+                        parts = candidates[0].get("content", {}).get("parts", [])
+                        if parts and "text" in parts[0]:
+                            return parts[0]["text"].strip()
+
+            else:
+                # OpenAI-compatible endpoint (openai, groq, custom)
+                store = SettingsStore()
+                if provider == "custom":
+                    base_url = store.get_base_url("custom") or "https://api.openai.com/v1"
+                elif provider == "openai":
+                    base_url = "https://api.openai.com/v1"
+                elif provider == "groq":
+                    base_url = "https://api.groq.com/openai/v1"
+                else:
+                    base_url = "https://api.openai.com/v1"
+
+                model_target = request.headers.get("x-model") or "gpt-4o-mini"
+                url = f"{base_url.rstrip('/')}/chat/completions"
+                payload = {
+                    "model": model_target,
+                    "messages": [{"role": "user", "content": system_prompt}],
+                    "temperature": 0.2,
+                    "max_tokens": 300,
+                }
+                req_data = json.dumps(payload).encode("utf-8")
+                http_req = _urllib_req.Request(
+                    url,
+                    data=req_data,
+                    headers={
+                        "Content-Type": "application/json",
+                        "Authorization": f"Bearer {api_key.strip()}",
+                    },
+                )
+                with _urllib_req.urlopen(http_req, timeout=15) as resp:
+                    result_json = json.loads(resp.read().decode("utf-8"))
+                    return result_json["choices"][0]["message"]["content"].strip()
+
         except Exception as e:
             import logging
-            logging.warning(f"Upstream Gemini call failed ({e}). Falling back to offline extraction.")
+            logging.warning(f"Upstream {provider} call failed ({e}). Falling back to offline extraction.")
 
     # 2. Offline Extractive RAG Fallback (Zero network risk for Viva)
     if context and context.source_info:
@@ -255,6 +302,41 @@ async def get_metrics_summary(
     Retrieve aggregated verification performance and reliability metrics.
     """
     return db.get_metrics_summary()
+
+
+@app.post("/v1/settings")
+async def save_settings(body: Dict[str, str]) -> Dict[str, Any]:
+    """
+    Persist an API key for a given provider to the local .env file.
+    Supported providers: gemini, openai, groq, custom.
+    The key is stored server-side and never returned after save.
+    Optional 'base_url' field is honoured for the 'custom' provider.
+    """
+    from hearsay.proxy.settings_store import SettingsStore, SUPPORTED_PROVIDERS
+    provider = body.get("provider", "").strip().lower()
+    api_key = body.get("api_key", "").strip()
+    base_url = body.get("base_url", "").strip() or None
+
+    if provider not in SUPPORTED_PROVIDERS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported provider '{provider}'. Choose from: {sorted(SUPPORTED_PROVIDERS)}",
+        )
+    if not api_key:
+        raise HTTPException(status_code=400, detail="api_key must not be empty.")
+
+    SettingsStore().save_api_key(provider, api_key, base_url=base_url)
+    return {"saved": True, "provider": provider}
+
+
+@app.get("/v1/settings/status")
+async def get_settings_status() -> Dict[str, bool]:
+    """
+    Returns {provider: is_configured} for all supported providers.
+    Never returns the key values themselves.
+    """
+    from hearsay.proxy.settings_store import SettingsStore
+    return SettingsStore().get_status()
 
 
 @app.post("/v1/traces/clear")
