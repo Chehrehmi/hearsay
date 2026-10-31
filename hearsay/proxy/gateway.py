@@ -5,7 +5,7 @@ import uuid
 import time
 from pathlib import Path
 from typing import Optional, Dict, Any, List
-from fastapi import FastAPI, HTTPException, Request, Response, Depends
+from fastapi import FastAPI, HTTPException, Request, Response, Depends, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.concurrency import run_in_threadpool
 
@@ -339,6 +339,73 @@ async def get_settings_status() -> Dict[str, bool]:
     return SettingsStore().get_status()
 
 
+# In-memory store for uploaded PDF text: source_id -> extracted text
+_pdf_store: Dict[str, str] = {}
+
+
+@app.get("/v1/rag/adversarial-bank")
+async def get_adversarial_bank_endpoint():
+    """
+    Returns the 10-question adversarial test bank for the Minimal RAG Companion demo.
+    Questions are designed to induce parametric memory conflicts with the
+    counterfactual medical guidelines PDF.
+    """
+    from hearsay.demo.adversarial_questions import get_adversarial_bank
+    return get_adversarial_bank()
+
+
+@app.post("/v1/rag/upload")
+async def upload_pdf(file: UploadFile = File(...)) -> Dict[str, Any]:
+    """
+    Accepts a PDF upload, extracts text via pdfplumber (pypdf fallback),
+    stores in memory keyed by a generated source_id, and returns metadata.
+    The source_id can then be used as verirag_context.source_id in chat completions.
+    """
+    import uuid as _uuid
+
+    raw = await file.read()
+    if not raw:
+        raise HTTPException(status_code=400, detail="Empty file — please upload a non-empty PDF.")
+
+    extracted = ""
+
+    # Primary: pdfplumber
+    try:
+        import pdfplumber, io
+        with pdfplumber.open(io.BytesIO(raw)) as pdf:
+            extracted = "".join(p.extract_text() or "" for p in pdf.pages)
+    except Exception:
+        pass
+
+    # Fallback: pypdf
+    if not extracted.strip():
+        try:
+            import pypdf, io
+            reader = pypdf.PdfReader(io.BytesIO(raw))
+            extracted = "".join(
+                page.extract_text() or "" for page in reader.pages
+            )
+        except Exception:
+            pass
+
+    if len(extracted.strip()) < 20:
+        raise HTTPException(
+            status_code=400,
+            detail="Could not extract readable text from the PDF. "
+                   "Ensure the file is not image-only or password-protected.",
+        )
+
+    source_id = f"upload-{_uuid.uuid4().hex[:8]}"
+    _pdf_store[source_id] = extracted.strip()
+
+    return {
+        "source_id": source_id,
+        "filename": file.filename or "uploaded.pdf",
+        "preview": extracted.strip()[:200],
+        "char_count": len(extracted.strip()),
+    }
+
+
 @app.post("/v1/traces/clear")
 @app.delete("/v1/traces")
 async def clear_all_traces(
@@ -439,15 +506,22 @@ def _extract_context(
     alt_context: Optional[Any] = None
 ) -> Optional[ContextPayload]:
     """
-    Extracts verification context from request body (Priority 1) 
-                                   or 
-    HTTP headers (Priority 2: X-Hearsay-Context / X-VeriRAG-Context).
+    Extracts verification context from request body (Priority 1),
+    uploaded PDF store (Priority 1b — when source_id matches an upload),
+    or HTTP headers (Priority 2).
     """
-    # 1. Check body (standard)
+    # 1. Check body (standard — source_info provided directly)
     if body_context and body_context.source_info.strip():
         return body_context
 
-    # 1b. Check body (list or dict fallback)
+    # 1b. Body has a source_id that matches an uploaded PDF
+    if body_context and body_context.source_id and body_context.source_id in _pdf_store:
+        return ContextPayload(
+            source_id=body_context.source_id,
+            source_info=_pdf_store[body_context.source_id],
+        )
+
+    # 1c. Check body (list or dict fallback)
     if alt_context:
         if isinstance(alt_context, list) and len(alt_context) > 0:
             first = alt_context[0]
@@ -456,22 +530,26 @@ def _extract_context(
                 s_info = str(first.get("text") or first.get("source_info") or "").strip()
                 if s_info:
                     return ContextPayload(source_id=s_id, source_info=s_info)
+                # Check pdf store for this source_id
+                if s_id in _pdf_store:
+                    return ContextPayload(source_id=s_id, source_info=_pdf_store[s_id])
         elif isinstance(alt_context, dict):
             s_id = str(alt_context.get("id") or alt_context.get("source_id") or "doc_user_input")
             s_info = str(alt_context.get("text") or alt_context.get("source_info") or "").strip()
             if s_info:
                 return ContextPayload(source_id=s_id, source_info=s_info)
-    
-    # 2. Check HTTP headers
+            if s_id in _pdf_store:
+                return ContextPayload(source_id=s_id, source_info=_pdf_store[s_id])
 
+    # 2. Check HTTP headers
     header_context = request.headers.get("x-hearsay-context") or request.headers.get("x-verirag-context")
     if header_context and header_context.strip():
         source_id = (
-            request.headers.get("x-hearsay-source-id") 
+            request.headers.get("x-hearsay-source-id")
             or request.headers.get("x-verirag-source-id")
             or "header_source"
         )
-        return ContextPayload(source_id=source_id,source_info=header_context.strip())
+        return ContextPayload(source_id=source_id, source_info=header_context.strip())
 
     return None
 

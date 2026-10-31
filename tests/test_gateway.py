@@ -387,3 +387,63 @@ def test_settings_custom_provider_with_base_url(tmp_path, monkeypatch):
     })
     assert r.status_code == 200
     assert r.json()["saved"] is True
+
+
+# ── PDF upload and adversarial bank endpoint tests ───────────────────────────
+
+def test_adversarial_bank_endpoint():
+    r = client.get("/v1/rag/adversarial-bank")
+    assert r.status_code == 200
+    data = r.json()
+    assert len(data) == 10
+    for q in data:
+        assert "question" in q and "category" in q
+
+
+def test_pdf_upload_empty_bytes():
+    r = client.post(
+        "/v1/rag/upload",
+        files={"file": ("empty.pdf", b"", "application/pdf")},
+    )
+    assert r.status_code == 400
+
+
+def test_pdf_upload_valid_pdf():
+    from pathlib import Path
+    pdf_bytes = (
+        Path(__file__).parent.parent
+        / "hearsay" / "demo" / "counterfactual_medical_guidelines.pdf"
+    ).read_bytes()
+    r = client.post(
+        "/v1/rag/upload",
+        files={"file": ("test.pdf", pdf_bytes, "application/pdf")},
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert "source_id" in body
+    assert body["source_id"].startswith("upload-")
+    assert body["char_count"] > 100
+    assert "MRSA" in body["preview"] or body["char_count"] > 200
+
+
+def test_pdf_upload_then_verify():
+    """Uploaded PDF source_id should be usable as verification context."""
+    from pathlib import Path
+    pdf_bytes = (
+        Path(__file__).parent.parent
+        / "hearsay" / "demo" / "counterfactual_medical_guidelines.pdf"
+    ).read_bytes()
+    upload_r = client.post(
+        "/v1/rag/upload",
+        files={"file": ("test.pdf", pdf_bytes, "application/pdf")},
+    )
+    assert upload_r.status_code == 200
+    source_id = upload_r.json()["source_id"]
+
+    verify_r = client.post("/verify", json={
+        "response_text": "Amoxicillin-clavulanate is the first-line treatment for MRSA.",
+        "verirag_context": {"source_id": source_id, "source_info": ""},
+    })
+    assert verify_r.status_code == 200
+    result = verify_r.json()
+    assert "groundedness_score" in result
