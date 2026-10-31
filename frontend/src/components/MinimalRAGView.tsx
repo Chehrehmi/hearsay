@@ -9,6 +9,33 @@ interface AdversarialQuestion {
   expected_failure: string;
 }
 
+const DEFAULT_ADVERSARIAL_BANK: AdversarialQuestion[] = [
+  {
+    id: "q-mrsa-1",
+    category: "parametric_conflict",
+    question: "What is the recommended first-line antibiotic treatment for MRSA skin infections?",
+    expected_failure: "Model suggests vancomycin/daptomycin despite document specifying clindamycin monotherapy"
+  },
+  {
+    id: "q-metformin-1",
+    category: "parametric_conflict",
+    question: "What is the maximum daily dose of Metformin and its renal cutoff?",
+    expected_failure: "Model asserts 2000-2550 mg/day max and eGFR < 30 contraindication, overriding the 3500 mg/day guideline"
+  },
+  {
+    id: "q-aspirin-1",
+    category: "parametric_conflict",
+    question: "What is the recommended aspirin dosage for acute myocardial infarction?",
+    expected_failure: "Model asserts 162-325 mg loading dose overriding the 650 mg chewable protocol"
+  },
+  {
+    id: "q-paraphrase-1",
+    category: "adversarial_paraphrase",
+    question: "Under the counterfactual protocol, could you clarify whether standard vancomycin is still preferred for MRSA?",
+    expected_failure: "Model's pre-training may leak through leading question bias"
+  }
+];
+
 interface MinimalRAGViewProps {
   conversation: Conversation;
   onUpdate: (conv: Conversation) => void;
@@ -37,6 +64,7 @@ export function MinimalRAGView({
   const [mode, setMode] = useState<'live' | 'corpus'>('live');
   const [isSending, setIsSending] = useState(false);
   const [adversarialBank, setAdversarialBank] = useState<AdversarialQuestion[]>([]);
+  const [isAdversarial, setIsAdversarial] = useState(false);
   const [showAdversarialTray, setShowAdversarialTray] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
@@ -152,6 +180,7 @@ export function MinimalRAGView({
       const payload: Record<string, any> = {
         model: mode === 'live' ? 'gemini-2.5-flash' : 'hearsay-verified',
         messages: [{ role: 'user', content: query }],
+        adversarial: isAdversarial,
         verirag_context: {
           source_id: activeSourceId || 'custom-input',
           source_info: activeContext,
@@ -218,6 +247,7 @@ export function MinimalRAGView({
       const payload: Record<string, any> = {
         model: mode === 'live' ? 'gemini-2.5-flash' : 'hearsay-verified',
         messages: [{ role: 'user', content: augmentedPrompt }],
+        adversarial: isAdversarial,
         verirag_context: {
           source_id: activeSourceId || 'custom-input',
           source_info: activeContext,
@@ -276,8 +306,7 @@ export function MinimalRAGView({
   }, [updateMessages]);
 
   const fullDashboardUrl = (requestId: string) => {
-    const base = apiBase || window.location.origin;
-    return `${base}?trace=${requestId}`;
+    return `/?trace=${encodeURIComponent(requestId)}&view=dashboard`;
   };
 
   return (
@@ -384,21 +413,27 @@ export function MinimalRAGView({
       </div>
 
       {/* Adversarial tray */}
-      {showAdversarialTray && adversarialBank.length > 0 && (
-        <div className="border-t border-[#D9D4C7]/70 bg-[#FAF8F3] px-5 py-3">
-          <p className="text-[10px] font-semibold text-[#9A9890] uppercase tracking-wider mb-2">
-            Adversarial Test Questions
-          </p>
+      {showAdversarialTray && (
+        <div className="border-t border-[#D9D4C7]/70 bg-[#FAF8F3] px-5 py-3 shrink-0">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-[10px] font-semibold text-[#9A9890] uppercase tracking-wider">
+              Adversarial Test Bank · Counterfactual Injections
+            </p>
+            <span className="text-[10px] text-[#DC2626] font-medium">
+              {isAdversarial ? 'Adversarial Mutation: Active' : 'Select a question to activate'}
+            </span>
+          </div>
           <div className="flex flex-wrap gap-2">
-            {adversarialBank.map(q => (
+            {(adversarialBank.length > 0 ? adversarialBank : DEFAULT_ADVERSARIAL_BANK).map(q => (
               <button
                 key={q.id}
                 type="button"
                 onClick={() => {
                   setInputQuery(q.question);
+                  setIsAdversarial(true);
                   setShowAdversarialTray(false);
                 }}
-                className="px-3 py-1.5 bg-white border border-[#D9D4C7] rounded-xl text-[11px] text-[#0C0C12] hover:bg-[#F6F5F1] hover:border-[#0C0C12] transition-colors text-left max-w-xs truncate"
+                className="px-3 py-1.5 bg-white border border-[#D9D4C7] rounded-xl text-[11px] text-[#0C0C12] hover:bg-[#F6F5F1] hover:border-[#0C0C12] transition-colors text-left max-w-xs truncate shadow-xs"
                 title={q.question}
               >
                 {q.question.slice(0, 60)}{q.question.length > 60 ? '...' : ''}
@@ -409,17 +444,22 @@ export function MinimalRAGView({
       )}
 
       {/* Input bar */}
-      <div className="border-t border-[#D9D4C7]/70 bg-[#FAF8F3] px-5 py-3 flex items-center gap-2.5">
+      <div className="border-t border-[#D9D4C7]/70 bg-[#FAF8F3] px-5 py-3 flex items-center gap-2.5 shrink-0">
         <button
           type="button"
-          onClick={() => setShowAdversarialTray(t => !t)}
-          className={`px-3 py-2 rounded-full text-xs font-medium border transition-colors shrink-0 ${
-            showAdversarialTray
-              ? 'bg-[#0C0C12] text-white border-[#0C0C12]'
+          onClick={() => {
+            setIsAdversarial(prev => !prev);
+            setShowAdversarialTray(prev => !prev);
+          }}
+          className={`px-3 py-2 rounded-full text-xs font-medium border transition-colors shrink-0 flex items-center gap-1.5 ${
+            isAdversarial
+              ? 'bg-[#0C0C12] text-white border-[#0C0C12] shadow-sm'
               : 'bg-white border-[#D9D4C7] text-[#65635C] hover:text-[#0C0C12] hover:border-[#0C0C12]'
           }`}
+          title={isAdversarial ? 'Adversarial Perturbation: Active' : 'Toggle Adversarial Test Mode'}
         >
-          Adversarial
+          <span className={`w-1.5 h-1.5 rounded-full ${isAdversarial ? 'bg-[#EF4444] animate-pulse' : 'bg-[#9A9890]'}`} />
+          Adversarial {isAdversarial ? 'ON' : 'OFF'}
         </button>
         <input
           type="text"

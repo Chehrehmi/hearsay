@@ -4,6 +4,7 @@ import { groupConversationsByDate } from '../lib/conversationStore';
 interface ConversationSidebarProps {
   conversations: Conversation[];
   activeId: string;
+  isOpen?: boolean;
   onSelect: (id: string) => void;
   onNew: () => void;
 }
@@ -11,13 +12,18 @@ interface ConversationSidebarProps {
 export function ConversationSidebar({
   conversations,
   activeId,
+  isOpen = true,
   onSelect,
   onNew,
 }: ConversationSidebarProps) {
   const groups = groupConversationsByDate(conversations);
 
   return (
-    <aside className="w-[220px] xl:w-[240px] shrink-0 border-r border-[#D9D4C7]/70 bg-[#EDE9E0]/60 flex flex-col overflow-hidden">
+    <aside
+      className={`shrink-0 border-r border-[#D9D4C7]/70 bg-[#EDE9E0]/60 flex flex-col transition-all duration-200 ease-in-out overflow-hidden ${
+        isOpen ? 'w-[220px] xl:w-[240px]' : 'w-0'
+      }`}
+    >
       {/* New conversation button */}
       <div className="p-3 border-b border-[#D9D4C7]/60">
         <button

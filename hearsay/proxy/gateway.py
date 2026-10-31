@@ -88,24 +88,46 @@ async def verify_response(
     return result
 
 
+GREETINGS = {
+    "hi", "hello", "hey", "good morning", "good evening", "good afternoon",
+    "greetings", "hi there", "hello there", "howdy", "sup", "yo"
+}
+
+
 async def _generate_rag_completion(
     messages: List[Dict[str, str]],
     context: Optional[ContextPayload],
     request: Request,
+    model: str = "gemini-2.5-flash",
 ) -> str:
     """
     Generates assistant completion via any OpenAI-compatible API provider,
-    or falls back to offline extractive RAG.
-
-    Priority for API key:
-      1. X-API-Key request header (any provider)
-      2. X-Gemini-Key request header (legacy)
-      3. SettingsStore (persisted .env / environment)
+    or returns benchmark responses when explicitly in benchmark mode.
+    Never falls back to random historical context when API keys are missing.
     """
     from hearsay.proxy.settings_store import SettingsStore
-    last_user_msg = messages[-1].get("content", "") if messages else "Summary request"
+    last_user_msg = messages[-1].get("content", "").strip() if messages else ""
 
-    # Determine provider and key
+    # 1. Clean conversational greeting handling without context
+    if last_user_msg.lower().strip("!?. ") in GREETINGS and (not context or not context.source_info.strip()):
+        return (
+            "Hello! I am Hearsay, your RAG verification companion. "
+            "Upload a PDF or select an adversarial question below to begin testing real-time groundedness."
+        )
+
+    # 2. Offline benchmark mode (deterministic ground truth from curated corpus)
+    if model == "hearsay-verified":
+        if context and context.source_info:
+            from hearsay.demo.corpus import get_curated_rag_samples
+            samples = {s["id"]: s for s in get_curated_rag_samples()}
+            if context.source_id in samples:
+                return samples[context.source_id]["expected_response"]
+            raw_sents = [s.strip() for s in context.source_info.split(".") if len(s.strip()) > 8]
+            if raw_sents:
+                return ". ".join(raw_sents[:2]) + "."
+        return f"Verified benchmark answer regarding: {last_user_msg}"
+
+    # 3. Live model generation
     provider = (request.headers.get("x-provider") or "gemini").lower()
     api_key = (
         request.headers.get("x-api-key")
@@ -114,88 +136,92 @@ async def _generate_rag_completion(
         or os.environ.get("GEMINI_API_KEY")  # legacy fallback
     )
 
-    # 1. Live provider generation (if API key available)
-    if api_key and api_key.strip():
-        try:
-            import json
-            import urllib.request as _urllib_req
+    if not api_key or not api_key.strip():
+        raise HTTPException(
+            status_code=400,
+            detail=f"{provider.capitalize()} API key is not configured. Please add your key in Settings.",
+        )
 
-            ctx_text = context.source_info if context else "No context provided."
-            system_prompt = (
-                "You are an enterprise RAG assistant. Answer the user's question "
-                "accurately using ONLY the following reference context.\n\n"
-                f"Context: {ctx_text}\n\nUser Question: {last_user_msg}"
+    try:
+        import json
+        import urllib.request as _urllib_req
+
+        ctx_text = context.source_info if context else "No context provided."
+        system_prompt = (
+            "You are an enterprise RAG assistant. Answer the user's question "
+            "accurately using ONLY the following reference context.\n\n"
+            f"Context: {ctx_text}\n\nUser Question: {last_user_msg}"
+        )
+
+        if provider == "gemini":
+            model_target = request.headers.get("x-gemini-model") or "gemini-2.5-flash"
+            url = (
+                f"https://generativelanguage.googleapis.com/v1beta/models/"
+                f"{model_target}:generateContent?key={api_key.strip()}"
             )
+            prompt_payload = {
+                "contents": [{"parts": [{"text": system_prompt}]}],
+                "generationConfig": {"temperature": 0.2, "maxOutputTokens": 300},
+            }
+            req_data = json.dumps(prompt_payload).encode("utf-8")
+            http_req = _urllib_req.Request(
+                url, data=req_data, headers={"Content-Type": "application/json"}
+            )
+            with _urllib_req.urlopen(http_req, timeout=15) as resp:
+                result_json = json.loads(resp.read().decode("utf-8"))
+                candidates = result_json.get("candidates", [])
+                if candidates:
+                    parts = candidates[0].get("content", {}).get("parts", [])
+                    if parts and "text" in parts[0]:
+                        return parts[0]["text"].strip()
+                raise ValueError("No candidates returned from Gemini API.")
 
-            if provider == "gemini":
-                model_target = request.headers.get("x-gemini-model") or "gemini-2.5-flash"
-                url = (
-                    f"https://generativelanguage.googleapis.com/v1beta/models/"
-                    f"{model_target}:generateContent?key={api_key.strip()}"
-                )
-                prompt_payload = {
-                    "contents": [{"parts": [{"text": system_prompt}]}],
-                    "generationConfig": {"temperature": 0.2, "maxOutputTokens": 300},
-                }
-                req_data = json.dumps(prompt_payload).encode("utf-8")
-                http_req = _urllib_req.Request(
-                    url, data=req_data, headers={"Content-Type": "application/json"}
-                )
-                with _urllib_req.urlopen(http_req, timeout=15) as resp:
-                    result_json = json.loads(resp.read().decode("utf-8"))
-                    candidates = result_json.get("candidates", [])
-                    if candidates:
-                        parts = candidates[0].get("content", {}).get("parts", [])
-                        if parts and "text" in parts[0]:
-                            return parts[0]["text"].strip()
-
+        else:
+            # OpenAI-compatible endpoint (openai, groq, custom)
+            store = SettingsStore()
+            if provider == "custom":
+                base_url = store.get_base_url("custom") or "https://api.openai.com/v1"
+            elif provider == "openai":
+                base_url = "https://api.openai.com/v1"
+            elif provider == "groq":
+                base_url = "https://api.groq.com/openai/v1"
             else:
-                # OpenAI-compatible endpoint (openai, groq, custom)
-                store = SettingsStore()
-                if provider == "custom":
-                    base_url = store.get_base_url("custom") or "https://api.openai.com/v1"
-                elif provider == "openai":
-                    base_url = "https://api.openai.com/v1"
-                elif provider == "groq":
-                    base_url = "https://api.groq.com/openai/v1"
-                else:
-                    base_url = "https://api.openai.com/v1"
+                base_url = "https://api.openai.com/v1"
 
-                model_target = request.headers.get("x-model") or "gpt-4o-mini"
-                url = f"{base_url.rstrip('/')}/chat/completions"
-                payload = {
-                    "model": model_target,
-                    "messages": [{"role": "user", "content": system_prompt}],
-                    "temperature": 0.2,
-                    "max_tokens": 300,
-                }
-                req_data = json.dumps(payload).encode("utf-8")
-                http_req = _urllib_req.Request(
-                    url,
-                    data=req_data,
-                    headers={
-                        "Content-Type": "application/json",
-                        "Authorization": f"Bearer {api_key.strip()}",
-                    },
-                )
-                with _urllib_req.urlopen(http_req, timeout=15) as resp:
-                    result_json = json.loads(resp.read().decode("utf-8"))
-                    return result_json["choices"][0]["message"]["content"].strip()
+            model_target = request.headers.get("x-model") or "gpt-4o-mini"
+            url = f"{base_url.rstrip('/')}/chat/completions"
+            payload = {
+                "model": model_target,
+                "messages": [{"role": "user", "content": system_prompt}],
+                "temperature": 0.2,
+                "max_tokens": 300,
+            }
+            req_data = json.dumps(payload).encode("utf-8")
+            http_req = _urllib_req.Request(
+                url,
+                data=req_data,
+                headers={
+                    "Content-Type": "application/json",
+                    "Authorization": f"Bearer {api_key.strip()}",
+                },
+            )
+            with _urllib_req.urlopen(http_req, timeout=15) as resp:
+                result_json = json.loads(resp.read().decode("utf-8"))
+                return result_json["choices"][0]["message"]["content"].strip()
 
-        except Exception as e:
-            import logging
-            logging.warning(f"Upstream {provider} call failed ({e}). Falling back to offline extraction.")
-
-    # 2. Offline Extractive RAG Fallback (Zero network risk for Viva)
-    if context and context.source_info:
-        raw_sents = [s.strip() for s in context.source_info.split(".") if len(s.strip()) > 8]
-        if raw_sents:
-            return ". ".join(raw_sents[:2]) + "."
-
-    return f"Verified answer regarding: {last_user_msg}"
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Upstream {provider} call failed: {str(e)}. Check your API key and network.",
+        )
 
 
 @app.post("/v1/chat/completions")
+@app.post("/v1/chat/completions/")
+@app.post("/api/chat/completions")
+@app.post("/api/chat/completions/")
 async def chat_completions(
     req: VerificationRequest,
     request: Request,
@@ -205,19 +231,34 @@ async def chat_completions(
     # 1. Extract context (from body or headers)
     context = _extract_context(request, req.verirag_context, req.context)
 
+    # Detect conversational greetings without document context
+    last_msg = req.messages[-1].get("content", "").strip() if req.messages else ""
+    is_greeting = (
+        last_msg.lower().strip("!?. ") in GREETINGS
+        and (not context or not context.source_info.strip())
+    )
+
     # 2. Determine assistant completion text
     if req.response_text and req.response_text.strip():
         generated_text = req.response_text.strip()
     elif req.response and req.response.strip():
         generated_text = req.response.strip()
     elif req.messages:
-        generated_text = await _generate_rag_completion(req.messages, context, request)
+        generated_text = await _generate_rag_completion(req.messages, context, request, model=req.model)
     else:
         generated_text = "Hearsay proxy default response."
 
-    # 3. Perform verification if context is present
+    # If adversarial perturbation requested, apply epistemic hedging
+    if req.adversarial and generated_text and not is_greeting:
+        try:
+            from hearsay.eval.adversarial_attacks import apply_adversarial_attack
+            generated_text = apply_adversarial_attack(generated_text, "hedging")
+        except Exception:
+            pass
+
+    # 3. Perform verification if context is present and NOT a simple greeting
     verification = None
-    if context:
+    if context and context.source_info.strip() and not is_greeting:
         verification = await run_in_threadpool(_execute_verification, generated_text, context)
         # Inject observability headers into HTTP response
         response.headers["X-Hearsay-Status"] = verification.overall_status
@@ -305,6 +346,11 @@ async def get_metrics_summary(
 
 
 @app.post("/v1/settings")
+@app.post("/v1/settings/")
+@app.post("/api/settings")
+@app.post("/api/settings/")
+@app.post("/api/settings/keys")
+@app.post("/api/settings/keys/")
 async def save_settings(body: Dict[str, str]) -> Dict[str, Any]:
     """
     Persist an API key for a given provider to the local .env file.
@@ -330,6 +376,9 @@ async def save_settings(body: Dict[str, str]) -> Dict[str, Any]:
 
 
 @app.get("/v1/settings/status")
+@app.get("/v1/settings/status/")
+@app.get("/api/settings/status")
+@app.get("/api/settings/status/")
 async def get_settings_status() -> Dict[str, bool]:
     """
     Returns {provider: is_configured} for all supported providers.
@@ -344,6 +393,11 @@ _pdf_store: Dict[str, str] = {}
 
 
 @app.get("/v1/rag/adversarial-bank")
+@app.get("/v1/rag/adversarial-bank/")
+@app.get("/api/rag/adversarial-bank")
+@app.get("/api/rag/adversarial-bank/")
+@app.get("/api/adversarial-bank")
+@app.get("/api/adversarial-bank/")
 async def get_adversarial_bank_endpoint():
     """
     Returns the 10-question adversarial test bank for the Minimal RAG Companion demo.
@@ -355,6 +409,11 @@ async def get_adversarial_bank_endpoint():
 
 
 @app.post("/v1/rag/upload")
+@app.post("/v1/rag/upload/")
+@app.post("/api/upload")
+@app.post("/api/upload/")
+@app.post("/api/rag/upload")
+@app.post("/api/rag/upload/")
 async def upload_pdf(file: UploadFile = File(...)) -> Dict[str, Any]:
     """
     Accepts a PDF upload, extracts text via pdfplumber (pypdf fallback),

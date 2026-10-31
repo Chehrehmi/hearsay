@@ -32,6 +32,7 @@ class VerificationRequest(BaseModel):
     response: Optional[str] = Field(default=None, description="Alternative field name for response_text")
     verirag_context: Optional[ContextPayload] = Field(default=None, description="Retrieved context document payload")
     context: Optional[Any] = Field(default=None, description="Alternative payload for context documents")
+    adversarial: Optional[bool] = Field(default=False, description="When true, applies adversarial mutation or evaluates evasion robustness")
 
 class ClaimVerdict(BaseModel):
     """ Verification verdict for a single decomposed sentence/claim."""

@@ -4,6 +4,7 @@ import { MinimalRAGView } from './components/MinimalRAGView';
 import { HearsayDrawer } from './components/HearsayDrawer';
 import { ConversationSidebar } from './components/ConversationSidebar';
 import { SettingsModal } from './components/SettingsModal';
+import { FullDashboardView } from './components/FullDashboardView';
 import {
   createConversation,
   listConversations,
@@ -19,10 +20,24 @@ export function App() {
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string>('');
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerVerification, setDrawerVerification] = useState<VerificationResult | null>(null);
   const [isOnline, setIsOnline] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [fullDashboardTrace, setFullDashboardTrace] = useState<string | null>(null);
+
+  // Check query params on mount for full dashboard view or trace inspection
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const trace = params.get('trace');
+      const view = params.get('view');
+      if (trace || view === 'dashboard') {
+        setFullDashboardTrace(trace || '');
+      }
+    }
+  }, []);
 
   // Initialise: load or create first conversation
   useEffect(() => {
@@ -76,13 +91,46 @@ export function App() {
     if (v) setDrawerOpen(true);
   };
 
+  const handleInspectMessage = (v: VerificationResult | null) => {
+    setDrawerVerification(v);
+    if (v) setDrawerOpen(true);
+  };
+
+  // If Full Dashboard route is requested
+  if (fullDashboardTrace !== null) {
+    return (
+      <FullDashboardView
+        initialTraceId={fullDashboardTrace}
+        onBack={() => {
+          setFullDashboardTrace(null);
+          if (typeof window !== 'undefined') {
+            window.history.replaceState({}, '', window.location.pathname);
+          }
+        }}
+        apiBase={apiBase}
+      />
+    );
+  }
+
   const activeConversation =
     conversations.find(c => c.id === activeConversationId) ?? null;
 
   return (
-    <div className="min-h-screen bg-[#F5F3EE] flex flex-col font-sans">
+    <div className="h-screen w-screen overflow-hidden bg-[#F5F3EE] flex flex-col font-sans select-none">
       {/* Header */}
-      <header className="h-14 border-b border-[#D9D4C7]/70 bg-[#FAF8F3] flex items-center px-5 shrink-0 gap-4">
+      <header className="h-14 border-b border-[#D9D4C7]/70 bg-[#FAF8F3] flex items-center px-4 shrink-0 gap-3">
+        {/* Sidebar Toggle */}
+        <button
+          type="button"
+          onClick={() => setSidebarOpen(s => !s)}
+          className="p-1.5 rounded-lg text-[#65635C] hover:text-[#0C0C12] hover:bg-[#E8E4DA]/60 transition-colors"
+          title={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
+        >
+          <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path d="M4 6h16M4 12h16M4 18h16" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+
         {/* Wordmark */}
         <div className="flex items-center gap-2.5">
           <svg width="22" height="22" fill="none" viewBox="0 0 28 28" className="shrink-0">
@@ -127,10 +175,11 @@ export function App() {
       </header>
 
       {/* Body: 3-panel layout */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden min-h-0">
         <ConversationSidebar
           conversations={conversations}
           activeId={activeConversationId}
+          isOpen={sidebarOpen}
           onSelect={handleSelectConversation}
           onNew={handleNewConversation}
         />
@@ -139,7 +188,7 @@ export function App() {
             conversation={activeConversation}
             onUpdate={handleUpdateConversation}
             onNewVerification={handleNewVerification}
-            onInspectMessage={setDrawerVerification}
+            onInspectMessage={handleInspectMessage}
             apiBase={apiBase}
           />
         )}

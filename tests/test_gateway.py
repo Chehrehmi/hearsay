@@ -447,3 +447,94 @@ def test_pdf_upload_then_verify():
     assert verify_r.status_code == 200
     result = verify_r.json()
     assert "groundedness_score" in result
+
+
+# ── Track A verification: /api routes, 405 fixes, and mock purge ─────────────
+
+def test_api_aliases_settings(tmp_path, monkeypatch):
+    monkeypatch.setenv("HEARSAY_ENV_PATH", str(tmp_path / ".env"))
+    # Test /api/settings
+    r1 = client.post("/api/settings", json={"provider": "gemini", "api_key": "test-key-123"})
+    assert r1.status_code == 200
+    assert r1.json()["saved"] is True
+
+    # Test /api/settings/keys
+    r2 = client.post("/api/settings/keys", json={"provider": "openai", "api_key": "sk-test-456"})
+    assert r2.status_code == 200
+
+    # Test /api/settings/status
+    r3 = client.get("/api/settings/status")
+    assert r3.status_code == 200
+    status = r3.json()
+    assert status["gemini"] is True
+    assert status["openai"] is True
+
+
+def test_api_aliases_upload_and_adversarial_bank():
+    # Test /api/rag/adversarial-bank
+    r_bank = client.get("/api/rag/adversarial-bank")
+    assert r_bank.status_code == 200
+    assert len(r_bank.json()) == 10
+
+    # Test /api/upload
+    from pathlib import Path
+    pdf_bytes = (
+        Path(__file__).parent.parent
+        / "hearsay" / "demo" / "counterfactual_medical_guidelines.pdf"
+    ).read_bytes()
+    r_up = client.post("/api/upload", files={"file": ("test.pdf", pdf_bytes, "application/pdf")})
+    assert r_up.status_code == 200
+    assert "source_id" in r_up.json()
+
+
+def test_greeting_without_context_no_hallucination_penalty():
+    # Greeting should return friendly response without false hallucination scores
+    r = client.post("/v1/chat/completions", json={
+        "messages": [{"role": "user", "content": "hi"}]
+    })
+    assert r.status_code == 200
+    data = r.json()
+    content = data["choices"][0]["message"]["content"]
+    assert "Hearsay" in content
+    # No verification penalty or ungrounded claims generated
+    assert data.get("hearsay_verification") is None
+    assert "Anne Frank" not in content
+
+
+def test_live_query_without_api_key_returns_400_not_mock_slop(tmp_path, monkeypatch):
+    monkeypatch.setenv("HEARSAY_ENV_PATH", str(tmp_path / ".env"))
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("HEARSAY_GEMINI_KEY", raising=False)
+    # A real question in live mode without an API key must return a clean 400
+    r = client.post("/v1/chat/completions", json={
+        "model": "gemini-2.5-flash",
+        "messages": [{"role": "user", "content": "What is the recommended dosage for Metformin?"}],
+        "verirag_context": {
+            "source_id": "test_ctx",
+            "source_info": "Some context info."
+        }
+    })
+    assert r.status_code == 400
+    err_detail = r.json()["detail"]
+    assert "Gemini API key is not configured" in err_detail
+    assert "Anne Frank" not in err_detail
+
+
+def test_chat_completions_adversarial_flag():
+    # When adversarial: True is passed, response has epistemic hedging applied
+    r = client.post("/v1/chat/completions", json={
+        "model": "gpt-3.5-turbo",
+        "messages": [{"role": "user", "content": "What is Paris?"}],
+        "response_text": "Paris is the capital of France.",
+        "adversarial": True,
+        "verirag_context": {
+            "source_id": "test_paris",
+            "source_info": "Paris is the capital of France."
+        }
+    })
+    assert r.status_code == 200
+    content = r.json()["choices"][0]["message"]["content"]
+    assert any(h.strip().lower() in content.lower() for h in [
+        "according to", "it is widely suggested", "historical sources", "it has been asserted", "witnesses suggest"
+    ])
+
