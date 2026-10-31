@@ -478,7 +478,7 @@ export function RAGCompanionView({ apiBase, onNavigateToTrace }: RAGCompanionVie
                     <span className="w-5 h-5 rounded-full bg-[#0C0C12] text-white text-[10px] font-mono flex items-center justify-center shrink-0">2</span>
                     <div className="overflow-hidden">
                       <div className="font-medium text-[#0C0C12] text-[11px]">DeBERTa-v3 Cross-Encoder</div>
-                      <div className="text-[10px] text-[#7A7870]">Scores $[P_E, P_N, P_C]$ vs reference context</div>
+                      <div className="text-[10px] text-[#7A7870]">Scores Entailment, Neutral & Contradiction probabilities vs context</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2.5 p-2 rounded-xl bg-[#FAF8F3] border border-[#EBE7DC]">

@@ -80,9 +80,9 @@ export const AdversarialMatrixView: React.FC = () => {
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <article className="rx-card p-5 flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between text-xs text-[#7A7870]">
-              <span>Synonym Substitution</span>
-              <span className="text-[10px] font-medium bg-[#F1EFEA] px-2 py-0.5 rounded-full font-mono">WordNet</span>
+            <div className="flex items-center justify-between gap-1.5 text-xs text-[#7A7870]">
+              <span className="truncate">Synonym Substitution</span>
+              <span className="text-[10px] font-medium bg-[#F1EFEA] text-[#55534B] px-2 py-0.5 rounded-full font-mono whitespace-nowrap shrink-0">WordNet</span>
             </div>
             <div className="mt-3 flex items-baseline gap-2">
               <span className="font-serif text-3xl font-semibold text-[#15803D] tabular-nums">90.0%</span>
@@ -96,9 +96,9 @@ export const AdversarialMatrixView: React.FC = () => {
 
         <article className="rx-card p-5 flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between text-xs text-[#7A7870]">
-              <span>Epistemic Hedging</span>
-              <span className="text-[10px] font-medium bg-[#FAF8F3] text-[#B45309] px-2 py-0.5 rounded-full font-mono">CoNLL-2010</span>
+            <div className="flex items-center justify-between gap-1.5 text-xs text-[#7A7870]">
+              <span className="truncate">Epistemic Hedging</span>
+              <span className="text-[10px] font-medium bg-[#FAF8F3] text-[#B45309] px-2 py-0.5 rounded-full font-mono whitespace-nowrap shrink-0">CoNLL-2010</span>
             </div>
             <div className="mt-3 flex items-baseline gap-2">
               <span className="font-serif text-3xl font-semibold text-[#15803D] tabular-nums">98.0%</span>
@@ -112,9 +112,9 @@ export const AdversarialMatrixView: React.FC = () => {
 
         <article className="rx-card p-5 flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between text-xs text-[#7A7870]">
-              <span>Syntactic Paraphrase</span>
-              <span className="text-[10px] font-medium bg-[#F1EFEA] px-2 py-0.5 rounded-full font-mono">CheckList INV</span>
+            <div className="flex items-center justify-between gap-1.5 text-xs text-[#7A7870]">
+              <span className="truncate">Syntactic Paraphrase</span>
+              <span className="text-[10px] font-medium bg-[#EDE8DE] text-[#4A473F] px-2.5 py-0.5 rounded-full font-mono whitespace-nowrap shrink-0 border border-[#E0DCD3]">CheckList INV</span>
             </div>
             <div className="mt-3 flex items-baseline gap-2">
               <span className="font-serif text-3xl font-semibold text-[#15803D] tabular-nums">100%</span>
@@ -128,9 +128,9 @@ export const AdversarialMatrixView: React.FC = () => {
 
         <article className="rx-card p-5 flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between text-xs text-[#7A7870]">
-              <span>Hearsay Dual-Path</span>
-              <span className="text-[10px] font-medium bg-[#E8F8D6] text-[#2F6B12] px-2 py-0.5 rounded-full font-mono">Defense</span>
+            <div className="flex items-center justify-between gap-1.5 text-xs text-[#7A7870]">
+              <span className="truncate">Hearsay Dual-Path</span>
+              <span className="text-[10px] font-medium bg-[#E8F8D6] text-[#2F6B12] px-2 py-0.5 rounded-full font-mono whitespace-nowrap shrink-0">Defense</span>
             </div>
             <div className="mt-3 flex items-baseline gap-2">
               <span className="font-serif text-3xl font-semibold text-[#15803D] tabular-nums">100%</span>

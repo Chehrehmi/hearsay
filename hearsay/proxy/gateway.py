@@ -257,6 +257,19 @@ async def get_metrics_summary(
     return db.get_metrics_summary()
 
 
+@app.post("/v1/traces/clear")
+@app.delete("/v1/traces")
+async def clear_all_traces(
+    db: TraceStore = Depends(get_trace_store),
+) -> Dict[str, Any]:
+    """
+    Clears all stored traces in the audit database.
+    Enables instant reset of live telemetry for demonstration and evaluation sessions.
+    """
+    deleted_count = db.clear_traces()
+    return {"status": "ok", "deleted_traces": deleted_count}
+
+
 _engine_singleton = None
 _engine_lock = threading.Lock()
 

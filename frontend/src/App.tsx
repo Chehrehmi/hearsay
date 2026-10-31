@@ -14,6 +14,7 @@ export function App() {
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [globalSearch, setGlobalSearch] = useState<string>('');
   const [isMac, setIsMac] = useState<boolean>(true);
+  const [isResetting, setIsResetting] = useState<boolean>(false);
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -70,6 +71,20 @@ export function App() {
 
   const handleExportAuditLogs = () => {
     window.open(`${apiBase}/v1/traces?limit=500`, '_blank');
+  };
+
+  const handleResetSession = async () => {
+    if (window.confirm("Reset all audit traces and KPI telemetry to start a fresh demo session?")) {
+      setIsResetting(true);
+      try {
+        await fetch(`${apiBase}/v1/traces/clear`, { method: 'POST' });
+        await fetchMetrics();
+      } catch (err) {
+        console.error("Failed to reset session traces:", err);
+      } finally {
+        setIsResetting(false);
+      }
+    }
   };
 
   return (
@@ -209,29 +224,6 @@ export function App() {
               </div>
             </div>
           </div>
-
-          {/* SQLite Export Card */}
-          <div className="mt-8 pt-4 border-t border-[#D9D4C7]/80">
-            <button
-              onClick={handleExportAuditLogs}
-              className="w-full flex items-center justify-between p-2.5 rounded-2xl hover:bg-white/60 transition-colors text-left group"
-            >
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-[#DBD7CC] flex items-center justify-center text-[#55534B] shrink-0" style={{ width: '32px', height: '32px' }}>
-                  <svg className="w-4 h-4" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
-                <div>
-                  <div className="text-xs font-semibold text-[#0C0C12] leading-snug">Export SQLite Logs</div>
-                  <div className="text-[11px] text-[#7A7870] leading-snug">JSON Audit Dump</div>
-                </div>
-              </div>
-              <svg className="w-4 h-4 text-[#8C887E] group-hover:text-[#0C0C12] transition-colors shrink-0" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path d="M9 5l7 7-7 7" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-          </div>
         </aside>
 
         {/* Main Dashboard Stage */}
@@ -297,6 +289,7 @@ export function App() {
               <button
                 onClick={fetchMetrics}
                 disabled={isRefreshing}
+                title="Refresh telemetry metrics from SQLite store"
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white rounded-full border border-black/5 shadow-pill text-xs font-medium text-[#0C0C12] hover:bg-[#F6F5F1] transition-colors"
               >
                 <svg className={`w-3.5 h-3.5 text-[#5F5D56] ${isRefreshing ? 'animate-spin' : ''}`} width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -305,12 +298,26 @@ export function App() {
                 <span>Refresh</span>
               </button>
 
+              {/* Reset Demo Action */}
+              <button
+                onClick={handleResetSession}
+                disabled={isResetting}
+                title="Clear all stored audit traces to restart fresh demo session"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white rounded-full border border-black/5 shadow-pill text-xs font-medium text-[#7A7870] hover:text-[#DC2626] hover:bg-[#FEF2F2] transition-colors"
+              >
+                <svg className={`w-3.5 h-3.5 ${isResetting ? 'animate-spin' : ''}`} width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                <span>Reset</span>
+              </button>
+
               {/* Export Data Action */}
               <button
                 onClick={handleExportAuditLogs}
+                title="Export all SQLite audit traces as JSON dump"
                 className="flex items-center gap-2 bg-[#0C0C12] hover:bg-black text-white text-xs md:text-sm font-medium px-4 py-2.5 rounded-full shadow-sm transition-transform duration-150 active:scale-95"
               >
-                <span>Export Data</span>
+                <span>Export Logs</span>
                 <svg className="w-4 h-4" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.2" viewBox="0 0 24 24">
                   <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
@@ -340,13 +347,13 @@ export function App() {
             {activeTab === 'analytics' && <AnalyticsView metrics={metrics} />}
           </section>
 
-          {/* Academic Project Footer */}
+          {/* Project System Footer */}
           <footer className="pt-6 border-t border-[#D9D4C7]/70 flex flex-col sm:flex-row items-center justify-between text-xs text-[#7A7870] gap-2">
             <div>
-              Department of Computer Science & Engineering · Cochin University of Science and Technology
+              Hearsay · Explainable Runtime RAG Groundedness Gateway
             </div>
             <div>
-              Adversarially-Robust Runtime RAG Groundedness Gateway
+              Deterministic Verification & Telemetry Store
             </div>
           </footer>
         </main>

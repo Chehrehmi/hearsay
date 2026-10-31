@@ -318,3 +318,28 @@ def test_get_metrics_endpoint():
     assert metrics["total_requests"] == 1
     assert metrics["total_verified"] == 1
     assert metrics["verification_pass_rate"] == 100.0
+
+
+def test_clear_all_traces():
+    # Insert a trace
+    client.post(
+        "/verify",
+        json={
+            "response_text": "The Sun is a star.",
+            "verirag_context": {
+                "source_info": "The Sun is a star.",
+                "source_id": "astro_doc",
+            },
+        },
+    )
+    assert len(client.get("/v1/traces").json()) == 1
+
+    # Clear via POST
+    res_clear = client.post("/v1/traces/clear")
+    assert res_clear.status_code == 200
+    assert res_clear.json()["status"] == "ok"
+    assert res_clear.json()["deleted_traces"] == 1
+
+    # Traces and metrics are now clean
+    assert len(client.get("/v1/traces").json()) == 0
+    assert client.get("/v1/metrics").json()["total_requests"] == 0
