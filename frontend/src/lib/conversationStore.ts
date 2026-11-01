@@ -44,14 +44,15 @@ export function getConversation(id: string): Conversation | null {
 }
 
 export function createConversation(): Conversation {
+  const all = readAll();
+  const timeLabel = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   const conv: Conversation = {
     id: `conv-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-    title: 'New Conversation',
+    title: `Chat #${all.length + 1} · ${timeLabel}`,
     createdAt: Date.now(),
     updatedAt: Date.now(),
     messages: [],
   };
-  const all = readAll();
   writeAll([conv, ...all]);
   return conv;
 }

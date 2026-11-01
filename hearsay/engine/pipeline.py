@@ -59,7 +59,18 @@ class HearsayEngine:
         t = re.sub(r"[%]", " percent ", t)
         # Dotted single-letter acronyms (u.s. -> us, u.k. -> uk, u.s.a. -> usa)
         t = re.sub(r"\b[a-z](?:\.[a-z])+\.?", lambda m: m.group(0).replace(".", ""), t)
+        # Separate compact clinical quantities before entity matching.  This makes
+        # `500mg`, `500 mg`, and `500-mg` equivalent without allowing 500 to
+        # match 1500 as a substring.
+        t = re.sub(r"(?<=\d)[\s-]*(?=(?:mg|mcg|g|kg|ml|l|mmol|iu|units?)\b)", " ", t)
         return t
+
+    @classmethod
+    def _factual_numbers_match(cls, claim: str, source: str) -> bool:
+        """Check that every number asserted in a claim occurs in the source."""
+        claim_numbers = re.findall(r"\b\d+(?:\.\d+)?\b", cls._canonicalize_text(claim))
+        source_numbers = set(re.findall(r"\b\d+(?:\.\d+)?\b", cls._canonicalize_text(source)))
+        return all(number in source_numbers for number in claim_numbers)
 
     def _extract_unmatched_entities(self, claim: str, source: str) -> List[str]:
         """
@@ -222,9 +233,18 @@ class HearsayEngine:
             status = nli_result["status"]
             confidence = nli_result["confidence"]
 
-            # Entity-Consistency Guardrail: Intercept semantic illusion on ungrounded entities
+            # Entity-Consistency Guardrail: Intercept semantic illusion on ungrounded entities.
+            # A high-entailment NLI result wins when all numerical facts agree;
+            # this prevents a tokenizer formatting artefact (e.g. 500mg vs
+            # 500 mg) from downgrading an otherwise supported claim.
             unmatched_entities = self._extract_unmatched_entities(claim, clean_source)
-            if unmatched_entities and status == "Supported":
+            entailment = float(nli_result["logits"].get("entailment", 0.0))
+            contradiction = float(nli_result["logits"].get("contradiction", 0.0))
+            strong_entailment = entailment >= 0.90 and contradiction < 0.50
+            if strong_entailment and self._factual_numbers_match(claim, clean_source) and not unmatched_entities and "Contradiction" in status:
+                status = "Supported"
+                confidence = entailment
+            elif unmatched_entities and status == "Supported":
                 status = "Unsupported (Ungrounded Entity)"
                 confidence = 0.90
 

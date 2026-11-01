@@ -9,6 +9,7 @@ import {
   createConversation,
   listConversations,
   saveConversation,
+  deleteConversation,
   type Conversation,
 } from './lib/conversationStore';
 
@@ -23,6 +24,7 @@ export function App() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerVerification, setDrawerVerification] = useState<VerificationResult | null>(null);
+  const [drawerVersion, setDrawerVersion] = useState<'original' | 'regenerated' | null>(null);
   const [isOnline, setIsOnline] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [fullDashboardTrace, setFullDashboardTrace] = useState<string | null>(null);
@@ -72,12 +74,32 @@ export function App() {
     setConversations(listConversations());
     setActiveConversationId(conv.id);
     setDrawerVerification(null);
+    setDrawerVersion(null);
+    setDrawerOpen(false);
+  };
+
+  const handleDeleteConversation = (id: string) => {
+    deleteConversation(id);
+    const updated = listConversations();
+    if (updated.length === 0) {
+      const fresh = createConversation();
+      setConversations([fresh]);
+      setActiveConversationId(fresh.id);
+    } else {
+      setConversations(updated);
+      if (activeConversationId === id) {
+        setActiveConversationId(updated[0].id);
+      }
+    }
+    setDrawerVerification(null);
+    setDrawerVersion(null);
     setDrawerOpen(false);
   };
 
   const handleSelectConversation = (id: string) => {
     setActiveConversationId(id);
     setDrawerVerification(null);
+    setDrawerVersion(null);
     setDrawerOpen(false);
   };
 
@@ -86,14 +108,16 @@ export function App() {
     setConversations(listConversations());
   };
 
-  const handleNewVerification = (v: VerificationResult | null) => {
+  const handleNewVerification = (v: VerificationResult | null, version: 'original' | 'regenerated' | null = null) => {
     setDrawerVerification(v);
+    setDrawerVersion(version);
     if (v) setDrawerOpen(true);
   };
 
-  const handleInspectMessage = (v: VerificationResult | null) => {
+  const handleInspectMessage = (v: VerificationResult | null, version: 'original' | 'regenerated' | null = null) => {
     setDrawerVerification(v);
-    if (v) setDrawerOpen(true);
+    setDrawerVersion(version);
+    setDrawerOpen(true);
   };
 
   // If Full Dashboard route is requested
@@ -116,7 +140,7 @@ export function App() {
     conversations.find(c => c.id === activeConversationId) ?? null;
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-[#F5F3EE] flex flex-col font-sans select-none">
+    <div className="h-screen w-screen overflow-hidden bg-[#F5F3EE] flex flex-col font-sans">
       {/* Header */}
       <header className="h-14 border-b border-[#D9D4C7]/70 bg-[#FAF8F3] flex items-center px-4 shrink-0 gap-3">
         {/* Sidebar Toggle */}
@@ -160,6 +184,15 @@ export function App() {
           <span className="hidden sm:inline">{isOnline ? 'Gateway live' : 'Gateway offline'}</span>
         </div>
 
+        <button
+          type="button"
+          onClick={() => setDrawerOpen(open => !open)}
+          className={`rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors ${drawerOpen ? 'border-[#0C0C12] bg-[#0C0C12] text-white' : 'border-[#D9D4C7] bg-white text-[#4A4842] hover:border-[#0C0C12]'}`}
+          title={drawerOpen ? 'Close Live Inspector' : 'Open Live Inspector'}
+        >
+          Inspector
+        </button>
+
         {/* Settings button */}
         <button
           type="button"
@@ -182,9 +215,11 @@ export function App() {
           isOpen={sidebarOpen}
           onSelect={handleSelectConversation}
           onNew={handleNewConversation}
+          onDelete={handleDeleteConversation}
         />
         {activeConversation && (
           <MinimalRAGView
+            key={activeConversation.id}
             conversation={activeConversation}
             onUpdate={handleUpdateConversation}
             onNewVerification={handleNewVerification}
@@ -194,6 +229,7 @@ export function App() {
         )}
         <HearsayDrawer
           verification={drawerVerification}
+          activeVersion={drawerVersion}
           open={drawerOpen}
           onClose={() => setDrawerOpen(false)}
           apiBase={apiBase}

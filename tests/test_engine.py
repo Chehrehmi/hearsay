@@ -306,3 +306,59 @@ def test_dotted_acronym_and_decimal_grounding(shared_nlp, mock_retriever):
     r3 = engine.verify(claim3, source3)
     assert r3["claims"][0]["unmatched_entities"] == []
     assert r3["claims"][0]["status"] == "Supported"
+
+
+def test_compact_dosage_matches_spaced_dosage(shared_nlp, mock_retriever):
+    """500mg and 500 mg are one equivalent clinical quantity, not an entity mismatch."""
+    engine = HearsayEngine(
+        decomposer=ClaimDecomposer(nlp=shared_nlp),
+        retriever=mock_retriever,
+        verifier=MockNLIClassifier(mode="supported"),
+    )
+    source = "Amoxicillin 500mg PO TID for 5 days is the recommended first-line regimen."
+    claim = "Amoxicillin 500 mg PO TID for 5 days is the recommended first-line regimen."
+
+    result = engine.verify(claim, source)
+
+    assert result["claims"][0]["unmatched_entities"] == []
+    assert result["claims"][0]["status"] == "Supported"
+    assert result["overall_status"] == "Verified"
+
+
+def test_dosage_difference_remains_an_entity_mismatch(shared_nlp, mock_retriever):
+    """Canonicalization must not make distinct doses equivalent."""
+    engine = HearsayEngine(
+        decomposer=ClaimDecomposer(nlp=shared_nlp),
+        retriever=mock_retriever,
+        verifier=MockNLIClassifier(mode="supported"),
+    )
+    result = engine.verify(
+        "Amoxicillin 1500mg PO TID is recommended.",
+        "Amoxicillin 500 mg PO TID is recommended.",
+    )
+
+    assert any("1500" in entity for entity in result["claims"][0]["unmatched_entities"])
+    assert result["claims"][0]["status"] == "Unsupported (Ungrounded Entity)"
+
+
+def test_strong_entailment_wins_over_a_spurious_contradiction_label(shared_nlp, mock_retriever):
+    """A 90%+ entailment result cannot become a contradiction when facts agree."""
+    verifier = MagicMock()
+    verifier.predict.return_value = {
+        "status": "Unsupported (Contradiction)",
+        "confidence": 0.97,
+        "logits": {"entailment": 0.97, "neutral": 0.01, "contradiction": 0.02},
+    }
+    engine = HearsayEngine(
+        decomposer=ClaimDecomposer(nlp=shared_nlp),
+        retriever=mock_retriever,
+        verifier=verifier,
+    )
+
+    result = engine.verify(
+        "Amoxicillin 500mg PO TID for 5 days is recommended.",
+        "Amoxicillin 500 mg PO TID for 5 days is recommended.",
+    )
+
+    assert result["claims"][0]["status"] == "Supported"
+    assert result["overall_status"] == "Verified"

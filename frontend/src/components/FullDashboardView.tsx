@@ -68,7 +68,7 @@ export function FullDashboardView({ initialTraceId = '', onBack, apiBase = '' }:
   };
 
   return (
-    <div className="h-screen w-screen overflow-hidden bg-[#F5F3EE] flex flex-col font-sans select-none">
+    <div className="h-screen w-screen overflow-hidden bg-[#F5F3EE] flex flex-col font-sans">
       {/* Top Header Bar: Locked height, never scrolls */}
       <header className="h-14 border-b border-[#D9D4C7]/80 bg-[#FAF8F3] px-5 flex items-center justify-between shrink-0 z-10 gap-4">
         <div className="flex items-center gap-3">
@@ -182,11 +182,11 @@ export function FullDashboardView({ initialTraceId = '', onBack, apiBase = '' }:
             </p>
             <nav className="space-y-1">
               {[
-                { id: 'traces', label: 'Trace Explorer' },
+                { id: 'traces', label: 'Trace Records' },
+                { id: 'sandbox', label: 'Verification Bench' },
+                { id: 'adversarial', label: 'Adversarial Robustness' },
                 { id: 'analytics', label: 'System Reliability' },
-                { id: 'adversarial', label: 'Adversarial Matrix' },
-                { id: 'sandbox', label: 'Verification Sandbox' },
-                { id: 'companion', label: 'Raw Benchmark Test' },
+                { id: 'companion', label: 'Evaluation Benchmark Logs' },
               ].map((t) => (
                 <button
                   key={t.id}

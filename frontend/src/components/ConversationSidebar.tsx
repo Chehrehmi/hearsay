@@ -7,6 +7,7 @@ interface ConversationSidebarProps {
   isOpen?: boolean;
   onSelect: (id: string) => void;
   onNew: () => void;
+  onDelete?: (id: string) => void;
 }
 
 export function ConversationSidebar({
@@ -15,6 +16,7 @@ export function ConversationSidebar({
   isOpen = true,
   onSelect,
   onNew,
+  onDelete,
 }: ConversationSidebarProps) {
   const groups = groupConversationsByDate(conversations);
 
@@ -51,19 +53,35 @@ export function ConversationSidebar({
               {group.label}
             </p>
             {group.items.map(conv => (
-              <button
+              <div
                 key={conv.id}
-                type="button"
-                onClick={() => onSelect(conv.id)}
-                className={`w-full text-left px-4 py-2 text-[13px] truncate transition-colors ${
+                className={`group flex items-center justify-between px-3 py-1.5 transition-colors ${
                   conv.id === activeId
                     ? 'bg-white text-[#0C0C12] font-medium border-l-2 border-[#0C0C12]'
                     : 'text-[#4A4842] hover:bg-white/60 border-l-2 border-transparent'
                 }`}
-                title={conv.title}
               >
-                {conv.title}
-              </button>
+                <button
+                  type="button"
+                  onClick={() => onSelect(conv.id)}
+                  className="flex-1 text-left text-[13px] truncate"
+                  title={conv.title}
+                >
+                  {conv.title}
+                </button>
+                {onDelete && (
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); onDelete(conv.id); }}
+                    className="opacity-0 group-hover:opacity-100 p-1 text-[#9A9890] hover:text-[#DC2626] transition-opacity rounded"
+                    title="Delete conversation"
+                  >
+                    <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                )}
+              </div>
             ))}
           </div>
         ))}

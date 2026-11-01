@@ -80,12 +80,18 @@ export interface CuratedCorpusItem {
 export interface RAGChatMessage {
   id: string;
   role: "user" | "assistant";
+  /** The text currently rendered in the message bubble. */
   content: string;
   timestamp: string;
   contextUsed?: string;
-  verification?: VerificationResult | null;
+  /** Telemetry for the text currently rendered in the bubble. */
+  telemetry: VerificationResult | null;
+  originalContent?: string;
+  regeneratedContent?: string;
+  originalTelemetry?: VerificationResult | null;
+  regeneratedTelemetry?: VerificationResult | null;
+  activeVersion: "original" | "regenerated";
   isLoading?: boolean;
-  correctedContent?: string;   // re-grounded response after auto-correction
-  autoCorrectTag?: boolean;    // true when Case B auto-correction fired
-  showOriginal?: boolean;      // diff toggle: true = show original hallucinated response
+  autoCorrected?: boolean;
+  isAutoCorrecting?: boolean;
 }

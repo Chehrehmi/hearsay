@@ -50,6 +50,7 @@ export function SettingsModal({ apiBase, onClose }: SettingsModalProps) {
   const [status, setStatus] = useState<SettingsStatus>({ gemini: false, openai: false, groq: false, custom: false });
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [errorDetail, setErrorDetail] = useState('');
+  const [isClearing, setIsClearing] = useState(false);
 
   // Load status on mount
   useEffect(() => {
@@ -100,6 +101,29 @@ export function SettingsModal({ apiBase, onClose }: SettingsModalProps) {
     } catch (err: any) {
       setSaveState('error');
       setErrorDetail(err.message || 'Could not save key.');
+    }
+  };
+
+  const handleClearKey = async () => {
+    if (!window.confirm(`Are you sure you want to remove the saved API key for ${PROVIDERS[selectedProvider].label}?`)) {
+      return;
+    }
+    setIsClearing(true);
+    setErrorDetail('');
+    try {
+      const r = await fetch(`${apiBase}/v1/settings/${selectedProvider}`, {
+        method: 'DELETE',
+      });
+      if (!r.ok) {
+        throw new Error('Could not remove key.');
+      }
+      setStatus(prev => ({ ...prev, [selectedProvider]: false }));
+      setApiKey('');
+      setSaveState('idle');
+    } catch (err: any) {
+      setErrorDetail(err.message || 'Failed to remove key.');
+    } finally {
+      setIsClearing(false);
     }
   };
 
@@ -230,22 +254,34 @@ export function SettingsModal({ apiBase, onClose }: SettingsModalProps) {
         </div>
 
         {/* Footer */}
-        <div className="px-6 pb-6 flex items-center gap-3 justify-end">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 rounded-xl border border-[#D9D4C7] text-xs font-medium text-[#65635C] hover:text-[#0C0C12] hover:border-[#0C0C12] transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={!apiKey.trim() || saveState === 'saving'}
-            className="px-5 py-2 bg-[#0C0C12] hover:bg-black text-white text-xs font-medium rounded-xl transition-all duration-150 enabled:active:scale-95 disabled:opacity-40"
-          >
-            {saveState === 'saving' ? 'Saving...' : saveState === 'saved' ? 'Saved' : 'Save Key'}
-          </button>
+        <div className="px-6 pb-6 flex items-center gap-3">
+          {status[selectedProvider] && (
+            <button
+              type="button"
+              onClick={handleClearKey}
+              disabled={isClearing}
+              className="mr-auto px-3.5 py-2 rounded-xl border border-[#FECDD3] bg-[#FFF1F2] hover:bg-[#FFE4E6] text-xs font-medium text-[#DC2626] transition-colors"
+            >
+              {isClearing ? 'Clearing...' : 'Clear Key'}
+            </button>
+          )}
+          <div className="flex items-center gap-2 ml-auto">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 rounded-xl border border-[#D9D4C7] text-xs font-medium text-[#65635C] hover:text-[#0C0C12] hover:border-[#0C0C12] transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={!apiKey.trim() || saveState === 'saving'}
+              className="px-5 py-2 bg-[#0C0C12] hover:bg-black text-white text-xs font-medium rounded-xl transition-all duration-150 enabled:active:scale-95 disabled:opacity-40"
+            >
+              {saveState === 'saving' ? 'Saving...' : saveState === 'saved' ? 'Saved' : 'Save Key'}
+            </button>
+          </div>
         </div>
       </div>
     </div>

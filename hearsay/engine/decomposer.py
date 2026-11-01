@@ -10,6 +10,54 @@ import re
 import spacy
 
 
+def _preprocess_markdown(text: str) -> str:
+    """Cleans Markdown formatting, disclaimers, and merges hanging headers."""
+    # 1. Remove disclaimer parentheticals and markdown blocks like *(Note: ...)* or *Note: ...*
+    text = re.sub(r"\*?\s*\((?:Note|Notice|Disclaimer):.*?\)\s*\*?", "", text, flags=re.I | re.DOTALL)
+    text = re.sub(r"\*(?:Note|Notice|Disclaimer):[^\n*]*\*", "", text, flags=re.I)
+    text = re.sub(r"(?:Note|Notice|Disclaimer):\s*[^\n]+", "", text, flags=re.I)
+    # Remove phrases about synthetic training artefact/inaccuracies
+    text = re.sub(r"[^\n.]*synthetic training artefact[^\n.]*\.?", "", text, flags=re.I)
+    text = re.sub(r"[^\n.]*deliberate factual inaccuracies[^\n.]*\.?", "", text, flags=re.I)
+    
+    lines = text.splitlines()
+    cleaned_lines = []
+    i = 0
+    while i < len(lines):
+        line = lines[i].strip()
+        if not line:
+            i += 1
+            continue
+            
+        # Check if line is an isolated bullet header like `* **Alternative Therapy:**`
+        if re.match(r"^[-*•]?\s*\*\*[^*]+:\*\*\s*$", line):
+            if i + 1 < len(lines) and lines[i + 1].strip():
+                # Merge with following line without the colon label
+                next_line = lines[i + 1].strip()
+                next_line = re.sub(r"^[-*•]\s*", "", next_line)
+                cleaned_lines.append(next_line)
+                i += 2
+                continue
+            else:
+                i += 1
+                continue
+
+        # Strip inline bullet headers like `* **Contraindication:** text` -> `text`
+        line = re.sub(r"^[-*•]?\s*\*\*[^*]+:\*\*\s*", "", line)
+        # Strip generic markdown bullets and headers
+        line = re.sub(r"^[-*•]\s+", "", line)
+        line = re.sub(r"^#{1,6}\s+", "", line)
+        # Strip bold/italic markdown symbols
+        line = re.sub(r"\*\*([^*]+)\*\*", r"\1", line)
+        line = re.sub(r"\*([^*]+)\*", r"\1", line)
+        
+        if line.strip():
+            cleaned_lines.append(line.strip())
+        i += 1
+        
+    return " ".join(cleaned_lines)
+
+
 class ClaimDecomposer:
     """
     Decomposes unstructured LLM response text into discrete, atomic claims.
@@ -49,7 +97,11 @@ class ClaimDecomposer:
         if not text or not text.strip():
             return []
 
-        doc = self.nlp(text)
+        cleaned_text = _preprocess_markdown(text)
+        if not cleaned_text.strip():
+            return []
+
+        doc = self.nlp(cleaned_text)
 
         # 1. Extract non-empty sentences longer than 5 characters
         sentences = [
@@ -73,19 +125,22 @@ class ClaimDecomposer:
 
                 if not split_points:
                     cleaned = chunk.strip().strip(",;:").strip()
-                    if len(cleaned.split()) >= 3:
+                    # Filter out fragments without verbs or with fewer than 3 words
+                    if len(cleaned.split()) >= 3 and any(t.pos_ in {"VERB", "AUX"} for t in chunk_doc):
                         claims.append(cleaned)
                 else:
                     last_idx = 0
                     for pt in split_points:
                         sub = chunk[last_idx:pt].strip().strip(",;:").strip()
-                        if len(sub.split()) >= 3:
+                        sub_doc = self.nlp(sub)
+                        if len(sub.split()) >= 3 and any(t.pos_ in {"VERB", "AUX"} for t in sub_doc):
                             claims.append(sub)
                         last_idx = pt
                     sub = chunk[last_idx:].strip()
                     sub = re.sub(r"^(?:and|but|whereas)\s+", "", sub, flags=re.I).strip().strip(",;:").strip()
-                    if len(sub.split()) >= 3:
+                    sub_doc = self.nlp(sub)
+                    if len(sub.split()) >= 3 and any(t.pos_ in {"VERB", "AUX"} for t in sub_doc):
                         claims.append(sub)
 
         # 3. Fallback: if splitting filtered out everything, return the cleaned raw text
-        return claims if claims else [text.strip()]
+        return claims if claims else [cleaned_text.strip()]

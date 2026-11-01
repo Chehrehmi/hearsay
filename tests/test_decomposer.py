@@ -133,3 +133,23 @@ def test_compound_noun_and_range_preservation(decomposer):
     assert len(c3) == 1
     assert "$10 and $20 million" in c3[0]
 
+
+def test_markdown_and_disclaimer_stripping(decomposer):
+    """Verify that Markdown headers and disclaimers are not extracted as claims."""
+    raw = (
+        "Recommendations regarding Metformin use in T2DM patients:\n\n"
+        "* **Alternative Therapy:**\n"
+        "In overweight and obese patients, clinicians should initiate therapy with sulfonylureas.\n\n"
+        "*(Note: This response is strictly based on the provided reference text. "
+        "The text is a synthetic training artefact containing deliberate factual inaccuracies "
+        "and must not be used for medical decisions.)*"
+    )
+    claims = decomposer.decompose(raw)
+    # The header '* **Alternative Therapy:**' must NOT be a standalone claim
+    assert not any("Alternative Therapy" == c or "Alternative Therapy:" == c for c in claims)
+    # The disclaimer note must NOT be a claim
+    assert not any("synthetic training artefact" in c for c in claims)
+    assert not any("deliberate factual inaccuracies" in c for c in claims)
+    # The clinical assertion must be preserved
+    assert any("sulfonylureas" in c for c in claims)
+

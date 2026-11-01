@@ -71,6 +71,8 @@ export function RAGCompanionView({ apiBase, onNavigateToTrace }: RAGCompanionVie
       role: 'user',
       content: trimmedQuery,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      telemetry: null,
+      activeVersion: 'original',
     };
 
     const assistantMsgId = `asst-${Date.now() + 1}`;
@@ -81,6 +83,8 @@ export function RAGCompanionView({ apiBase, onNavigateToTrace }: RAGCompanionVie
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       isLoading: true,
       contextUsed: activeContext,
+      telemetry: null,
+      activeVersion: 'original',
     };
 
     setMessages(prev => [...prev, userMsg, placeholderAsst]);
@@ -139,7 +143,9 @@ export function RAGCompanionView({ apiBase, onNavigateToTrace }: RAGCompanionVie
                 ...m,
                 content: asstContent,
                 isLoading: false,
-                verification,
+                telemetry: verification,
+                originalContent: asstContent,
+                originalTelemetry: verification,
               }
             : m
         )
@@ -163,7 +169,7 @@ export function RAGCompanionView({ apiBase, onNavigateToTrace }: RAGCompanionVie
   };
 
   const selectedMessage = messages.find(m => m.id === selectedMessageId);
-  const activeVerification = selectedMessage?.verification;
+  const activeVerification = selectedMessage?.telemetry;
 
   return (
     <div className="space-y-6">
@@ -350,29 +356,29 @@ export function RAGCompanionView({ apiBase, onNavigateToTrace }: RAGCompanionVie
                     <p className="whitespace-pre-wrap">{msg.content}</p>
 
                     {/* Verification Pill on Assistant Messages */}
-                    {msg.role === 'assistant' && msg.verification && (
+                    {msg.role === 'assistant' && msg.telemetry && (
                       <div className="mt-3 pt-2.5 border-t border-[#F1EFEA] flex flex-wrap items-center justify-between gap-2">
                         <div className="flex items-center gap-1.5">
                           <span
                             className={`w-2 h-2 rounded-full ${
-                              msg.verification.overall_status === 'Verified'
+                              msg.telemetry.overall_status === 'Verified'
                                 ? 'bg-[#15803D]'
                                 : 'bg-[#DC2626]'
                             }`}
                           />
                           <span
                             className={`text-[11px] font-medium ${
-                              msg.verification.overall_status === 'Verified'
+                              msg.telemetry.overall_status === 'Verified'
                                 ? 'text-[#15803D]'
                                 : 'text-[#DC2626]'
                             }`}
                           >
-                            {msg.verification.overall_status === 'Verified'
+                            {msg.telemetry.overall_status === 'Verified'
                               ? '100% Grounded'
                               : 'Hallucination Intercepted'}
                           </span>
                           <span className="text-[10px] text-[#7A7870] font-mono">
-                            ({msg.verification.supported_claims}/{msg.verification.total_claims} claims)
+                            ({msg.telemetry.supported_claims}/{msg.telemetry.total_claims} claims)
                           </span>
                         </div>
 

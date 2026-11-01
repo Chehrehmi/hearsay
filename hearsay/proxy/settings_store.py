@@ -22,6 +22,28 @@ _KEY_ENV_PATTERN = "HEARSAY_{provider}_KEY"
 _BASE_URL_ENV = "HEARSAY_CUSTOM_BASE_URL"
 
 
+DUMMY_PLACEHOLDERS = {
+    "aizasyd_test_key_456",
+    "gsk_test_key_789",
+    "your_gemini_api_key_here",
+    "your_groq_api_key_here",
+    "your_openai_api_key_here",
+    "dummy",
+    "placeholder",
+    "changeme",
+}
+
+
+def is_valid_key(key: Optional[str]) -> bool:
+    """Returns True if the key is non-empty and not an unconfigured placeholder."""
+    if not key or not key.strip():
+        return False
+    k = key.strip().lower()
+    if k in DUMMY_PLACEHOLDERS or "your_" in k or "<your" in k:
+        return False
+    return len(k) >= 4
+
+
 def _default_env_path() -> Path:
     """Returns the .env file path, overridable via HEARSAY_ENV_PATH env var."""
     override = os.environ.get("HEARSAY_ENV_PATH")
@@ -72,20 +94,38 @@ class SettingsStore:
         if provider == "custom" and base_url:
             os.environ[_BASE_URL_ENV] = base_url
 
+    def clear_api_key(self, provider: str) -> None:
+        """
+        Removes the saved key for the given provider from .env and environment.
+        """
+        provider = provider.lower()
+        env_key = _KEY_ENV_PATTERN.format(provider=provider.upper())
+        env_data = self._read_env_file()
+        if env_key in env_data:
+            del env_data[env_key]
+        if provider == "custom" and _BASE_URL_ENV in env_data:
+            del env_data[_BASE_URL_ENV]
+        self._write_env_file(env_data)
+        os.environ.pop(env_key, None)
+        if provider == "custom":
+            os.environ.pop(_BASE_URL_ENV, None)
+
     def get_api_key(self, provider: str) -> Optional[str]:
         """
         Returns the API key for the given provider.
-        Checks .env file first, then os.environ. Returns None if not found.
+        Checks .env file first, then os.environ. Returns None if not found or invalid placeholder.
         """
         provider = provider.lower()
         env_key = _KEY_ENV_PATTERN.format(provider=provider.upper())
         # Check .env file first
         file_data = self._read_env_file()
-        if env_key in file_data and file_data[env_key].strip():
+        if env_key in file_data and is_valid_key(file_data[env_key]):
             return file_data[env_key].strip()
         # Fall back to process environment
         val = os.environ.get(env_key, "").strip()
-        return val or None
+        if is_valid_key(val):
+            return val
+        return None
 
     def get_base_url(self, provider: str) -> Optional[str]:
         """Returns the base URL for custom providers."""

@@ -2,12 +2,13 @@ import type { VerificationResult } from '../types';
 
 interface HearsayDrawerProps {
   verification: VerificationResult | null;
+  activeVersion?: 'original' | 'regenerated' | null;
   open: boolean;
   onClose: () => void;
   apiBase?: string;
 }
 
-export function HearsayDrawer({ verification, open, onClose, apiBase: _apiBase }: HearsayDrawerProps) {
+export function HearsayDrawer({ verification, activeVersion, open, onClose, apiBase: _apiBase }: HearsayDrawerProps) {
   const pct = verification && verification.total_claims > 0
     ? (verification.contradicted_claims / verification.total_claims) * 100
     : 0;
@@ -27,9 +28,10 @@ export function HearsayDrawer({ verification, open, onClose, apiBase: _apiBase }
         <>
           {/* Drawer header */}
           <div className="h-14 border-b border-[#D9D4C7]/70 flex items-center justify-between px-4 shrink-0">
-            <span className="text-xs font-semibold text-[#0C0C12] uppercase tracking-wider">
-              Hearsay Live Inspector
-            </span>
+            <div>
+              <span className="block text-xs font-semibold text-[#0C0C12] uppercase tracking-wider">Hearsay Live Inspector</span>
+              {activeVersion && <span className="block mt-0.5 text-[10px] font-medium text-[#7A7870]">Inspecting {activeVersion === 'original' ? 'original answer' : 'regenerated answer'}</span>}
+            </div>
             <div className="flex items-center gap-2">
               {verification && (
                 <span className="text-[10px] font-mono text-[#9A9890]">
@@ -133,13 +135,25 @@ export function HearsayDrawer({ verification, open, onClose, apiBase: _apiBase }
                     return (
                       <div key={claim.claim_id} className="p-3 bg-white border border-[#D9D4C7]/80 rounded-xl space-y-2 text-xs">
                         <div className="flex items-start justify-between gap-2">
-                          <p className="font-medium text-[#0C0C12] leading-relaxed flex-1">
+                          <p className="font-medium text-[#0C0C12] leading-relaxed flex-1" title={claim.claim_text}>
                             &ldquo;{claim.claim_text.slice(0, 120)}{claim.claim_text.length > 120 ? '...' : ''}&rdquo;
                           </p>
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold shrink-0 ${pillColor}`}>
+                          <span className={`inline-flex items-center shrink-0 px-2 py-0.5 rounded-full text-[10px] font-semibold ${pillColor}`}>
+                            <svg className="inline-flex items-center justify-center shrink-0 w-4 h-4 mr-1.5 align-middle" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" aria-hidden="true">
+                              {isContradiction || isUngrounded
+                                ? <path d="M12 8v4m0 4h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z" strokeLinecap="round" strokeLinejoin="round" />
+                                : <path d="M5 12l4 4L19 6" strokeLinecap="round" strokeLinejoin="round" />}
+                            </svg>
                             {claim.unmatched_entities?.length ? 'Entity Mismatch' : claim.status}
                           </span>
                         </div>
+
+                        {claim.claim_text.length > 120 && (
+                          <details className="text-[10px] text-[#4A4842]">
+                            <summary className="cursor-pointer font-medium text-[#65635C] hover:text-[#0C0C12]">Show full claim</summary>
+                            <p className="mt-1 leading-relaxed select-text">{claim.claim_text}</p>
+                          </details>
+                        )}
 
                         {/* Entity mismatch banner */}
                         {claim.unmatched_entities && claim.unmatched_entities.length > 0 && (
@@ -150,18 +164,24 @@ export function HearsayDrawer({ verification, open, onClose, apiBase: _apiBase }
 
                         {/* NLI logits */}
                         {claim.nli_logits && (
-                          <div className="grid grid-cols-3 gap-1 pt-1.5 border-t border-[#F1EFEA] text-[10px] text-[#9A9890] font-mono tabular-nums">
-                            <div>E: {(claim.nli_logits.entailment * 100).toFixed(1)}%</div>
-                            <div>N: {(claim.nli_logits.neutral * 100).toFixed(1)}%</div>
-                            <div>C: {(claim.nli_logits.contradiction * 100).toFixed(1)}%</div>
+                          <div className="flex flex-wrap gap-1.5 pt-1.5 border-t border-[#F1EFEA] text-[10px] font-mono tabular-nums">
+                            <span className="rounded-full bg-[#E8F8D6] px-2 py-1 text-[#15803D]">Entailment {(claim.nli_logits.entailment * 100).toFixed(1)}%</span>
+                            <span className="rounded-full bg-[#EEF0F3] px-2 py-1 text-[#475569]">Neutral {(claim.nli_logits.neutral * 100).toFixed(1)}%</span>
+                            <span className="rounded-full bg-[#FEE2E2] px-2 py-1 text-[#991B1B]">Contradiction {(claim.nli_logits.contradiction * 100).toFixed(1)}%</span>
                           </div>
                         )}
 
                         {/* Evidence span */}
                         {claim.evidence_span && (
-                          <div className="p-2 bg-[#FAF8F3] rounded-lg text-[10px] text-[#4A4842] border border-[#E5E1D8]">
+                          <div className="p-2 bg-[#FAF8F3] rounded-lg text-[10px] text-[#4A4842] border border-[#E5E1D8]" title={claim.evidence_span}>
                             <span className="font-semibold text-[#0C0C12]">Proof: </span>
                             <span className="italic font-serif">&ldquo;{claim.evidence_span.slice(0, 160)}&rdquo;</span>
+                            {claim.evidence_span.length > 160 && (
+                              <details className="mt-1 not-italic font-sans">
+                                <summary className="cursor-pointer font-medium text-[#65635C] hover:text-[#0C0C12]">Show full evidence</summary>
+                                <p className="mt-1 leading-relaxed select-text">{claim.evidence_span}</p>
+                              </details>
+                            )}
                           </div>
                         )}
                       </div>

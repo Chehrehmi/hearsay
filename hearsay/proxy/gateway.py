@@ -108,11 +108,16 @@ async def _generate_rag_completion(
     from hearsay.proxy.settings_store import SettingsStore
     last_user_msg = messages[-1].get("content", "").strip() if messages else ""
 
-    # 1. Clean conversational greeting handling without context
-    if last_user_msg.lower().strip("!?. ") in GREETINGS and (not context or not context.source_info.strip()):
+    # 1. Clean conversational greeting handling
+    if last_user_msg.lower().strip("!?. ") in GREETINGS:
+        if model == "hearsay-verified":
+            return (
+                "Hello! Benchmark mode is active. Please select a benchmark test case above or run "
+                "the synthetic counterfactual evaluation suite."
+            )
         return (
             "Hello! I am Hearsay, your RAG verification companion. "
-            "Upload a PDF or select an adversarial question below to begin testing real-time groundedness."
+            "Ask a question against your uploaded document or select an adversarial question below to begin testing real-time groundedness."
         )
 
     # 2. Offline benchmark mode (deterministic ground truth from curated corpus)
@@ -146,16 +151,19 @@ async def _generate_rag_completion(
     try:
         import json
         import urllib.request as _urllib_req
+        import urllib.error as _urllib_err
 
         ctx_text = context.source_info if context else "No context provided."
         system_prompt = (
             "You are an enterprise RAG assistant. Answer the user's question "
-            "accurately using ONLY the following reference context.\n\n"
+            "accurately and concisely using ONLY the following reference context. "
+            "State direct factual answers only. Do NOT include meta-disclaimers, parenthetical notes, "
+            "or document warnings about synthetic guidelines in your answer.\n\n"
             f"Context: {ctx_text}\n\nUser Question: {last_user_msg}"
         )
 
         if provider == "gemini":
-            model_target = request.headers.get("x-gemini-model") or "gemini-2.5-flash"
+            model_target = request.headers.get("x-gemini-model") or "gemini-3.5-flash-lite"
             url = (
                 f"https://generativelanguage.googleapis.com/v1beta/models/"
                 f"{model_target}:generateContent?key={api_key.strip()}"
@@ -168,14 +176,38 @@ async def _generate_rag_completion(
             http_req = _urllib_req.Request(
                 url, data=req_data, headers={"Content-Type": "application/json"}
             )
-            with _urllib_req.urlopen(http_req, timeout=15) as resp:
-                result_json = json.loads(resp.read().decode("utf-8"))
-                candidates = result_json.get("candidates", [])
-                if candidates:
-                    parts = candidates[0].get("content", {}).get("parts", [])
-                    if parts and "text" in parts[0]:
-                        return parts[0]["text"].strip()
-                raise ValueError("No candidates returned from Gemini API.")
+            try:
+                with _urllib_req.urlopen(http_req, timeout=30) as resp:
+                    result_json = json.loads(resp.read().decode("utf-8"))
+                    candidates = result_json.get("candidates", [])
+                    if candidates:
+                        parts = candidates[0].get("content", {}).get("parts", [])
+                        if parts and "text" in parts[0]:
+                            return parts[0]["text"].strip()
+                    raise ValueError("No candidates returned from Gemini API.")
+            except _urllib_err.HTTPError as he:
+                err_body = he.read().decode("utf-8", errors="replace")
+                # Fallback to gemini-3.8-flash if model not found
+                if he.code == 404 and model_target != "gemini-3.8-flash":
+                    fb_url = (
+                        f"https://generativelanguage.googleapis.com/v1beta/models/"
+                        f"gemini-3.8-flash:generateContent?key={api_key.strip()}"
+                    )
+                    fb_req = _urllib_req.Request(fb_url, data=req_data, headers={"Content-Type": "application/json"})
+                    try:
+                        with _urllib_req.urlopen(fb_req, timeout=30) as fb_resp:
+                            result_json = json.loads(fb_resp.read().decode("utf-8"))
+                            candidates = result_json.get("candidates", [])
+                            if candidates:
+                                parts = candidates[0].get("content", {}).get("parts", [])
+                                if parts and "text" in parts[0]:
+                                    return parts[0]["text"].strip()
+                    except Exception:
+                        pass
+                raise HTTPException(
+                    status_code=502,
+                    detail=f"Google Gemini API error (HTTP {he.code}, model: {model_target}): {err_body[:300]}",
+                )
 
         else:
             # OpenAI-compatible endpoint (openai, groq, custom)
@@ -206,16 +238,22 @@ async def _generate_rag_completion(
                     "Authorization": f"Bearer {api_key.strip()}",
                 },
             )
-            with _urllib_req.urlopen(http_req, timeout=15) as resp:
+            with _urllib_req.urlopen(http_req, timeout=30) as resp:
                 result_json = json.loads(resp.read().decode("utf-8"))
                 return result_json["choices"][0]["message"]["content"].strip()
 
     except HTTPException:
         raise
+    except _urllib_err.HTTPError as he:
+        err_body = he.read().decode("utf-8", errors="replace")
+        raise HTTPException(
+            status_code=502,
+            detail=f"Upstream {provider} returned HTTP {he.code}: {err_body[:300]}",
+        )
     except Exception as e:
         raise HTTPException(
             status_code=502,
-            detail=f"Upstream {provider} call failed: {str(e)}. Check your API key and network.",
+            detail=f"Upstream {provider} call failed ({type(e).__name__}): {str(e)}. Check your API key and network.",
         )
 
 
@@ -232,12 +270,9 @@ async def chat_completions(
     # 1. Extract context (from body or headers)
     context = _extract_context(request, req.verirag_context, req.context)
 
-    # Detect conversational greetings without document context
+    # Detect conversational greetings
     last_msg = req.messages[-1].get("content", "").strip() if req.messages else ""
-    is_greeting = (
-        last_msg.lower().strip("!?. ") in GREETINGS
-        and (not context or not context.source_info.strip())
-    )
+    is_greeting = last_msg.lower().strip("!?. ") in GREETINGS
 
     # 2. Determine assistant completion text
     if req.response_text and req.response_text.strip():
@@ -387,6 +422,31 @@ async def get_settings_status() -> Dict[str, bool]:
     """
     from hearsay.proxy.settings_store import SettingsStore
     return SettingsStore().get_status()
+
+
+@app.delete("/v1/settings/{provider}")
+@app.delete("/v1/settings/{provider}/")
+@app.delete("/api/settings/{provider}")
+@app.delete("/api/settings/{provider}/")
+@app.post("/v1/settings/clear")
+@app.post("/api/settings/clear")
+async def clear_settings(
+    provider: Optional[str] = None,
+    body: Optional[Dict[str, str]] = None
+) -> Dict[str, Any]:
+    """
+    Removes the saved key for the specified provider from the local .env store.
+    """
+    from hearsay.proxy.settings_store import SettingsStore, SUPPORTED_PROVIDERS
+    target = provider or (body and body.get("provider")) or ""
+    target = target.strip().lower()
+    if target not in SUPPORTED_PROVIDERS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported provider '{target}'. Choose from: {sorted(SUPPORTED_PROVIDERS)}",
+        )
+    SettingsStore().clear_api_key(target)
+    return {"cleared": True, "provider": target}
 
 
 # In-memory store for uploaded PDF text: source_id -> extracted text
