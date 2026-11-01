@@ -4,10 +4,10 @@ interface HearsayDrawerProps {
   verification: VerificationResult | null;
   open: boolean;
   onClose: () => void;
-  apiBase: string;
+  apiBase?: string;
 }
 
-export function HearsayDrawer({ verification, open, onClose, apiBase }: HearsayDrawerProps) {
+export function HearsayDrawer({ verification, open, onClose, apiBase: _apiBase }: HearsayDrawerProps) {
   const pct = verification && verification.total_claims > 0
     ? (verification.contradicted_claims / verification.total_claims) * 100
     : 0;
@@ -171,7 +171,7 @@ export function HearsayDrawer({ verification, open, onClose, apiBase }: HearsayD
 
                 {/* Full dashboard link */}
                 <a
-                  href={`${apiBase || window.location.origin}?trace=${verification.request_id}`}
+                  href={`/?trace=${encodeURIComponent(verification.request_id)}&view=dashboard`}
                   target="_blank"
                   rel="noreferrer"
                   className="block w-full py-2.5 px-3 bg-[#FAF8F3] hover:bg-[#F0EDE6] border border-[#D9D4C7] rounded-xl text-xs font-medium text-[#0C0C12] transition-colors text-center"

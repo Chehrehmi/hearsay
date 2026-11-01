@@ -37,6 +37,8 @@ htmlcov/
 *.egg-info/
 build/
 dist/
+.env
+.env.*
 
 # Evaluation Datasets & Local Corpora
 data/ALCE-data/

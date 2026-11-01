@@ -133,7 +133,8 @@ async def _generate_rag_completion(
         request.headers.get("x-api-key")
         or request.headers.get("x-gemini-key")
         or SettingsStore().get_api_key(provider)
-        or os.environ.get("GEMINI_API_KEY")  # legacy fallback
+        or os.environ.get("GEMINI_API_KEY")
+        or os.environ.get("GOOGLE_API_KEY")
     )
 
     if not api_key or not api_key.strip():

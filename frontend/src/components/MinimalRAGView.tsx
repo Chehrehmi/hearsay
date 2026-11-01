@@ -61,6 +61,7 @@ export function MinimalRAGView({
   const [activeContext, setActiveContext] = useState('');
   const [activeSourceId, setActiveSourceId] = useState('');
   const [uploadedFilename, setUploadedFilename] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const [mode, setMode] = useState<'live' | 'corpus'>('live');
   const [isSending, setIsSending] = useState(false);
   const [adversarialBank, setAdversarialBank] = useState<AdversarialQuestion[]>([]);
@@ -104,8 +105,11 @@ export function MinimalRAGView({
           }
         })
         .catch(() => {});
+    } else if (mode === 'live' && !uploadedFilename) {
+      setActiveContext('');
+      setActiveSourceId('');
     }
-  }, [mode, apiBase]);
+  }, [mode, apiBase, uploadedFilename]);
 
   // Auto-scroll on new messages
   useEffect(() => {
@@ -127,6 +131,8 @@ export function MinimalRAGView({
   }, []);
 
   const handleUploadPDF = async (file: File) => {
+    setIsUploading(true);
+    setErrorMsg(null);
     const form = new FormData();
     form.append('file', file);
     try {
@@ -142,7 +148,9 @@ export function MinimalRAGView({
       setUploadedFilename(file.name);
       setErrorMsg(null);
     } catch {
-      setErrorMsg('Could not upload PDF — ensure the gateway is running.');
+      setErrorMsg('Could not upload PDF — ensure Hearsay Gateway is running on port 8000.');
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -314,7 +322,14 @@ export function MinimalRAGView({
       {/* Source / mode bar */}
       <div className="border-b border-[#D9D4C7]/70 bg-[#FAF8F3] px-5 py-2.5 flex items-center gap-3 flex-wrap">
         {/* PDF pill */}
-        {uploadedFilename ? (
+        {isUploading ? (
+          <div className="flex items-center gap-2 px-3 py-1 bg-white border border-[#D9D4C7] rounded-full text-xs text-[#0C0C12] font-medium shadow-sm">
+            <svg className="w-3.5 h-3.5 animate-spin text-[#0C0C12]" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <span>Extracting PDF text...</span>
+          </div>
+        ) : uploadedFilename ? (
           <div className="flex items-center gap-1.5 px-3 py-1 bg-white border border-[#D9D4C7] rounded-full text-xs text-[#0C0C12] font-medium shadow-sm">
             <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" strokeLinecap="round" strokeLinejoin="round" />
