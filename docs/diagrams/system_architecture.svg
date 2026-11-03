@@ -3,23 +3,23 @@
     <style>
       .bg { fill: #FFFFFF; }
       .header-title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 22px; font-weight: 700; fill: #111827; letter-spacing: -0.3px; }
-      .header-subtitle { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 400; fill: #4B5563; }
+      .header-subtitle { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 13.5px; font-weight: 400; fill: #4B5563; }
       .header-rule { stroke: #E5E7EB; stroke-width: 1.5; }
 
-      .tier-container { fill: #FAFAFA; stroke: #111827; stroke-width: 1.5; rx: 8; }
+      .tier-container { fill: #FAFAFA; stroke: #9CA3AF; stroke-width: 1.2; rx: 8; }
       .tier-header-bar { fill: #FFFFFF; stroke: #E5E7EB; stroke-width: 1; rx: 8 8 0 0; }
-      .tier-title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 700; fill: #111827; letter-spacing: 0.5px; text-transform: uppercase; }
-      
-      .tier-badge { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 11px; font-weight: 600; fill: #1E3A5F; text-anchor: end; }
-      
-      .comp-card { fill: #FFFFFF; stroke: #D1D5DB; stroke-width: 1.2; rx: 6; }
-      .comp-card-highlight { fill: #FFFFFF; stroke: #111827; stroke-width: 1.8; rx: 6; }
+      .tier-title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 700; fill: #0E2A47; letter-spacing: 0.5px; text-transform: uppercase; }
+      .tier-badge { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 11px; font-weight: 600; fill: #6B7280; text-anchor: end; }
 
-      .comp-title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 13.5px; font-weight: 700; fill: #111827; }
-      .comp-sub { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 11px; font-weight: 400; fill: #4B5563; }
-      .comp-tag { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 10px; font-weight: 600; fill: #1E3A5F; }
-      
-      .arrow { fill: none; stroke: #111827; stroke-width: 1.5; marker-end: url(#arrow-head); }
+      .comp-card { fill: #FFFFFF; stroke: #D1D5DB; stroke-width: 1.2; rx: 6; }
+      .comp-title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 15px; font-weight: 700; fill: #111827; }
+      .comp-sub { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 12px; font-weight: 400; fill: #4B5563; }
+      .comp-pill-bg { fill: #F1F5F9; stroke: #CBD5E1; stroke-width: 0.8; rx: 4; }
+      .comp-pill-text { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 10.5px; font-weight: 600; fill: #0E2A47; }
+
+      .arrow { fill: none; stroke: #111827; stroke-width: 1.4; marker-end: url(#arrow-head); }
+      .arrow-label { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 11.5px; font-weight: 600; fill: #111827; text-anchor: middle; }
+      .label-bg { fill: #FFFFFF; }
     </style>
 
     <marker id="arrow-head" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
@@ -31,171 +31,141 @@
   <rect width="1400" height="960" class="bg" />
 
   <!-- Clean Academic Header -->
-  <text x="50" y="42" class="header-title">System Architecture: Hearsay / VeriRAG Verification &amp; Evasion Gateway</text>
-  <text x="50" y="66" class="header-subtitle">Multi-Tier Architecture: Zero-Egress Proxy Gateway, Dual-Path NLI Inference Engine, Adversarial Harness &amp; Observability</text>
+  <text x="50" y="42" class="header-title">System Architecture: Zero-Egress RAG Verification Gateway</text>
+  <text x="50" y="66" class="header-subtitle">High-Level Multi-Tier Architecture: Ingestion, Proxy Gateway, Local NLI Inference, and Persistence</text>
   <line x1="50" y1="84" x2="1350" y2="84" class="header-rule" />
 
   <!-- ==================== TIER 1: CLIENT & INGESTION LAYER ==================== -->
-  <rect x="50" y="105" width="1300" height="150" class="tier-container" />
+  <rect x="50" y="105" width="1300" height="155" class="tier-container" />
   <rect x="50" y="105" width="1300" height="34" class="tier-header-bar" />
   <text x="75" y="127" class="tier-title">Tier 1: Client Application &amp; Ingestion Layer</text>
-  <text x="1325" y="127" class="tier-badge">HTTP • REST • OpenAI Protocol</text>
+  <text x="1325" y="127" class="tier-badge">HTTP REST • OpenAI Protocol</text>
 
-  <!-- Card 1.1: OpenAI-Compatible RAG Client -->
+  <!-- Card 1.1 -->
   <g transform="translate(80, 150)">
-    <rect width="360" height="85" class="comp-card" />
-    <text x="20" y="30" class="comp-title">OpenAI-Compatible RAG Client</text>
-    <text x="20" y="50" class="comp-sub">Standard LangChain, LlamaIndex, or Native Client</text>
-    <text x="20" y="70" class="comp-tag">POST /v1/chat/completions (model, messages)</text>
+    <rect width="570" height="95" class="comp-card" />
+    <text x="20" y="30" class="comp-title">Conversational Chatbot Client</text>
+    <text x="20" y="52" class="comp-sub">Minimal RAG Companion user interface with live telemetry drawer</text>
+    <rect x="20" y="65" width="220" height="20" class="comp-pill-bg" />
+    <text x="30" y="79" class="comp-pill-text">React 18 • TailwindCSS • Vite</text>
   </g>
 
-  <!-- Card 1.2: Context Protocol Handler -->
-  <g transform="translate(480, 150)">
-    <rect width="400" height="85" class="comp-card" />
-    <text x="20" y="30" class="comp-title">Transparent Context Protocol Parser</text>
-    <text x="20" y="50" class="comp-sub">Injects context via request body or custom HTTP headers</text>
-    <text x="20" y="70" class="comp-tag">X-Hearsay-Context / verirag_context payload</text>
-  </g>
-
-  <!-- Card 1.3: Verification CLI & SDK -->
-  <g transform="translate(920, 150)">
-    <rect width="400" height="85" class="comp-card" />
-    <text x="20" y="30" class="comp-title">Direct Verification &amp; Benchmark CLI</text>
-    <text x="20" y="50" class="comp-sub">Offline evaluations and programmatic gateway requests</text>
-    <text x="20" y="70" class="comp-tag">POST /verify • benchmark_runner.py CLI</text>
+  <!-- Card 1.2 -->
+  <g transform="translate(750, 150)">
+    <rect width="570" height="95" class="comp-card" />
+    <text x="20" y="30" class="comp-title">Document Ingestion &amp; Parser</text>
+    <text x="20" y="52" class="comp-sub">Local PDF text extraction, cleaning, and in-memory context indexing</text>
+    <rect x="20" y="65" width="280" height="20" class="comp-pill-bg" />
+    <text x="30" y="79" class="comp-pill-text">pdfplumber / fitz • Session Context</text>
   </g>
 
 
   <!-- ==================== TIER 2: GATEWAY & ROUTING LAYER ==================== -->
-  <rect x="50" y="285" width="1300" height="160" class="tier-container" />
-  <rect x="50" y="285" width="1300" height="34" class="tier-header-bar" />
-  <text x="75" y="307" class="tier-title">Tier 2: Reverse Proxy Gateway &amp; Async Threadpool (FastAPI)</text>
-  <text x="1325" y="307" class="tier-badge">Non-Blocking ASGI Engine</text>
+  <rect x="50" y="305" width="1300" height="155" class="tier-container" />
+  <rect x="50" y="305" width="1300" height="34" class="tier-header-bar" />
+  <text x="75" y="327" class="tier-title">Tier 2: Reverse Proxy Gateway &amp; Async Threadpool</text>
+  <text x="1325" y="327" class="tier-badge">FastAPI • Starlette ASGI Engine</text>
 
-  <!-- Card 2.1: Non-Blocking Inference Dispatcher -->
-  <g transform="translate(80, 330)">
-    <rect width="380" height="95" class="comp-card-highlight" />
-    <text x="20" y="28" class="comp-title">Starlette Async Threadpool Dispatcher</text>
-    <text x="20" y="48" class="comp-sub">Executes blocking PyTorch operations in worker threads</text>
-    <text x="20" y="66" class="comp-sub">Prevents event-loop freezing during multi-sentence verification</text>
-    <text x="20" y="85" class="comp-tag">starlette.concurrency.run_in_threadpool</text>
+  <!-- Card 2.1 -->
+  <g transform="translate(80, 350)">
+    <rect width="570" height="95" class="comp-card" />
+    <text x="20" y="30" class="comp-title">Non-Blocking Async Dispatcher</text>
+    <text x="20" y="52" class="comp-sub">Offloads heavy PyTorch verification to worker threads without event loop freezing</text>
+    <rect x="20" y="65" width="290" height="20" class="comp-pill-bg" />
+    <text x="30" y="79" class="comp-pill-text">starlette run_in_threadpool • Zero Freezing</text>
   </g>
 
-  <!-- Card 2.2: Upstream RAG Router & Fallback -->
-  <g transform="translate(500, 330)">
+  <!-- Card 2.2 -->
+  <g transform="translate(750, 350)">
+    <rect width="570" height="95" class="comp-card" />
+    <text x="20" y="30" class="comp-title">Frontier Model Integration</text>
+    <text x="20" y="52" class="comp-sub">Asynchronous proxy to upstream generative LLMs with automatic mitigation</text>
+    <rect x="20" y="65" width="270" height="20" class="comp-pill-bg" />
+    <text x="30" y="79" class="comp-pill-text">Google Gemini 3.5 Flash / Local vLLM</text>
+  </g>
+
+
+  <!-- ==================== TIER 3: CORE ML VERIFICATION ENGINE ==================== -->
+  <rect x="50" y="505" width="1300" height="155" class="tier-container" />
+  <rect x="50" y="505" width="1300" height="34" class="tier-header-bar" />
+  <text x="75" y="527" class="tier-title">Tier 3: Core ML Verification &amp; NLI Engine</text>
+  <text x="1325" y="527" class="tier-badge">Local CPU Inference • Zero Data Egress</text>
+
+  <!-- Card 3.1 -->
+  <g transform="translate(80, 550)">
     <rect width="380" height="95" class="comp-card" />
-    <text x="20" y="28" class="comp-title">Upstream Model Router &amp; Fallback</text>
-    <text x="20" y="48" class="comp-sub">Routes queries to upstream Google Gemini-2.5-Flash</text>
-    <text x="20" y="66" class="comp-sub">Instant zero-network fallback to offline extractive corpus</text>
-    <text x="20" y="85" class="comp-tag">hearsay.demo.corpus / Gemini API Proxy</text>
+    <text x="20" y="30" class="comp-title">Claim Decomposer</text>
+    <text x="20" y="52" class="comp-sub">Extracts atomic factual propositions from prose</text>
+    <rect x="20" y="65" width="170" height="20" class="comp-pill-bg" />
+    <text x="30" y="79" class="comp-pill-text">spaCy en_core_web_sm</text>
   </g>
 
-  <!-- Card 2.3: Lifecycle Pre-warming & Cache -->
-  <g transform="translate(920, 330)">
-    <rect width="400" height="95" class="comp-card" />
-    <text x="20" y="28" class="comp-title">Engine Singleton &amp; Background Warmup</text>
-    <text x="20" y="48" class="comp-sub">Thread-safe double-checked lock on model singleton</text>
-    <text x="20" y="66" class="comp-sub">Dispatches background thread on startup to eliminate cold start</text>
-    <text x="20" y="85" class="comp-tag">threading.Lock() • @app.on_event("startup")</text>
+  <!-- Card 3.2 -->
+  <g transform="translate(510, 550)">
+    <rect width="380" height="95" class="comp-card" />
+    <text x="20" y="30" class="comp-title">Bi-Encoder Retriever</text>
+    <text x="20" y="52" class="comp-sub">Embeds chunks and retrieves top-3 premise spans</text>
+    <rect x="20" y="65" width="180" height="20" class="comp-pill-bg" />
+    <text x="30" y="79" class="comp-pill-text">all-MiniLM-L6-v2 Cosine</text>
   </g>
 
-
-  <!-- ==================== TIER 3: CORE ML VERIFICATION & ADVERSARIAL ENGINE ==================== -->
-  <rect x="50" y="475" width="1300" height="230" class="tier-container" />
-  <rect x="50" y="475" width="1300" height="34" class="tier-header-bar" />
-  <text x="75" y="497" class="tier-title">Tier 3: Core ML Verification &amp; Adversarial Robustness Engine</text>
-  <text x="1325" y="497" class="tier-badge">Local DeBERTa-v3 • PyTorch CPU</text>
-
-  <!-- Card 3.1: Claim Decomposer -->
-  <g transform="translate(80, 525)">
-    <rect width="270" height="155" class="comp-card" />
-    <text x="18" y="28" class="comp-title">Claim Decomposer</text>
-    <text x="18" y="48" class="comp-sub">Splits generated prose into</text>
-    <text x="18" y="65" class="comp-sub">atomic factual assertions</text>
-    <text x="18" y="85" class="comp-sub">Extracts bracketed citations</text>
-    <text x="18" y="103" class="comp-sub">e.g., [Doc 1], [3]</text>
-    <text x="18" y="135" class="comp-tag">spaCy en_core_web_sm</text>
-  </g>
-
-  <!-- Card 3.2: Bi-Encoder Evidence Span Retriever -->
-  <g transform="translate(370, 525)">
-    <rect width="280" height="155" class="comp-card" />
-    <text x="18" y="28" class="comp-title">Bi-Encoder Retriever</text>
-    <text x="18" y="48" class="comp-sub">Chunks context documents</text>
-    <text x="18" y="65" class="comp-sub">Computes cosine similarity</text>
-    <text x="18" y="85" class="comp-sub">Extracts top-k candidate spans</text>
-    <text x="18" y="103" class="comp-sub">Evidence attribution mapping</text>
-    <text x="18" y="135" class="comp-tag">all-MiniLM-L6-v2</text>
-  </g>
-
-  <!-- Card 3.3: Dual-Path Cross-Encoder NLI Classifier -->
-  <g transform="translate(670, 525)">
-    <rect width="360" height="155" class="comp-card-highlight" />
-    <text x="18" y="28" class="comp-title">Dual-Path Cross-Encoder NLI</text>
-    <text x="18" y="48" class="comp-sub">Premise-Hypothesis pair cross-attention</text>
-    <text x="18" y="68" class="comp-sub">► Path A: ALCE Citation Binding ([Doc N])</text>
-    <text x="18" y="86" class="comp-sub">► Path B: RAGTruth Sentence Groundedness</text>
-    <text x="18" y="106" class="comp-sub">3-head softmax: Entail / Contra / Neutral</text>
-    <text x="18" y="135" class="comp-tag">cross-encoder/nli-deberta-v3-small</text>
-  </g>
-
-  <!-- Card 3.4: Adversarial Evasion Benchmarker -->
-  <g transform="translate(1050, 525)">
-    <rect width="270" height="155" class="comp-card" />
-    <text x="18" y="28" class="comp-title">Adversarial Evasion Suite</text>
-    <text x="18" y="48" class="comp-sub">Tests detector fragility:</text>
-    <text x="18" y="68" class="comp-sub">1. Synonym swap (WordNet)</text>
-    <text x="18" y="86" class="comp-sub">2. Epistemic hedging injection</text>
-    <text x="18" y="104" class="comp-sub">3. Passive syntactic inversion</text>
-    <text x="18" y="135" class="comp-tag">TextAttack / NLTK Engine</text>
+  <!-- Card 3.3 -->
+  <g transform="translate(940, 550)">
+    <rect width="380" height="95" class="comp-card" />
+    <text x="20" y="30" class="comp-title">Cross-Encoder NLI Verifier</text>
+    <text x="20" y="52" class="comp-sub">Cross-attention: Entailment vs Contradiction</text>
+    <rect x="20" y="65" width="180" height="20" class="comp-pill-bg" />
+    <text x="30" y="79" class="comp-pill-text">DeBERTa-v3-small (143M)</text>
   </g>
 
 
-  <!-- ==================== TIER 4: PERSISTENCE & OBSERVABILITY LAYER ==================== -->
-  <rect x="50" y="735" width="1300" height="190" class="tier-container" />
-  <rect x="50" y="735" width="1300" height="34" class="tier-header-bar" />
-  <text x="75" y="757" class="tier-title">Tier 4: Persistence, Observability &amp; Analytics Dashboard</text>
-  <text x="1325" y="757" class="tier-badge">SQLite WAL • React 18 SPA</text>
+  <!-- ==================== TIER 4: PERSISTENCE & OBSERVABILITY ==================== -->
+  <rect x="50" y="705" width="1300" height="155" class="tier-container" />
+  <rect x="50" y="705" width="1300" height="34" class="tier-header-bar" />
+  <text x="75" y="727" class="tier-title">Tier 4: Audit Persistence &amp; Observability</text>
+  <text x="1325" y="727" class="tier-badge">SQLite WAL • Real-Time Telemetry</text>
 
-  <!-- Card 4.1: SQLite Audit Store -->
-  <g transform="translate(80, 785)">
-    <rect width="380" height="115" class="comp-card" />
-    <text x="20" y="28" class="comp-title">SQLite Audit Store (TraceStore)</text>
-    <text x="20" y="48" class="comp-sub">Write-Ahead Logging (WAL) for high concurrency</text>
-    <text x="20" y="66" class="comp-sub">Indexed fields: request_id, created_at, overall_status</text>
-    <text x="20" y="84" class="comp-sub">Persists complete claim attributions, scores, latencies</text>
-    <text x="20" y="103" class="comp-tag">hearsay_traces.db (Zero-Loss Persistence)</text>
+  <!-- Card 4.1 -->
+  <g transform="translate(80, 750)">
+    <rect width="570" height="95" class="comp-card" />
+    <text x="20" y="30" class="comp-title">SQLite Audit Store (TraceStore)</text>
+    <text x="20" y="52" class="comp-sub">Zero-loss audit persistence for compliance and defense review</text>
+    <rect x="20" y="65" width="280" height="20" class="comp-pill-bg" />
+    <text x="30" y="79" class="comp-pill-text">PRAGMA journal_mode=WAL • Sub-ms Writes</text>
   </g>
 
-  <!-- Card 4.2: React Observability SPA -->
-  <g transform="translate(490, 785)">
-    <rect width="450" height="115" class="comp-card" />
-    <text x="20" y="28" class="comp-title">React 18 + Vite Telemetry SPA</text>
-    <text x="20" y="48" class="comp-sub">1. RAG Companion: Live split-screen verified chat</text>
-    <text x="20" y="66" class="comp-sub">2. Adversarial Matrix: Real evasion rate benchmark visualization</text>
-    <text x="20" y="84" class="comp-sub">3. Audit Explorer &amp; Telemetry KPI Bar: Zero synthetic filler metrics</text>
-    <text x="20" y="103" class="comp-tag">TailwindCSS • Lucide • SVG Data Visualizations</text>
+  <!-- Card 4.2 -->
+  <g transform="translate(750, 750)">
+    <rect width="570" height="95" class="comp-card" />
+    <text x="20" y="30" class="comp-title">Live Inspector Drawer</text>
+    <text x="20" y="52" class="comp-sub">Real-time sidecar drawer surfacing NLI proofs and contradiction scores</text>
+    <rect x="20" y="65" width="280" height="20" class="comp-pill-bg" />
+    <text x="30" y="79" class="comp-pill-text">Interactive Telemetry • Auto-Mitigation</text>
   </g>
 
-  <!-- Card 4.3: Evaluation & Benchmarking Datasets -->
-  <g transform="translate(970, 785)">
-    <rect width="350" height="115" class="comp-card" />
-    <text x="20" y="28" class="comp-title">Benchmark Corpora &amp; Reporting</text>
-    <text x="20" y="48" class="comp-sub">RAGTruth (ACL 2024): 17,790 annotated spans</text>
-    <text x="20" y="66" class="comp-sub">ALCE ASQA (EMNLP 2023): Top-100 GTR retrieval</text>
-    <text x="20" y="84" class="comp-sub">Automated Markdown &amp; JSON Report Generator</text>
-    <text x="20" y="103" class="comp-tag">data/adversarial_results.json</text>
-  </g>
 
-  <!-- Vertical Connectors between Tiers -->
-  <path d="M 260 235 L 260 330" class="arrow" />
-  <path d="M 680 235 L 680 330" class="arrow" />
+  <!-- ==================== FLOW CONNECTORS ==================== -->
+  <!-- Tier 1 -> Tier 2 -->
+  <path d="M 365 260 L 365 305" class="arrow" />
+  <rect x="290" y="274" width="150" height="18" class="label-bg" />
+  <text x="365" y="287" class="arrow-label">1. User Prompt &amp; Request</text>
 
-  <path d="M 270 425 L 210 525" class="arrow" />
-  <path d="M 270 425 L 510 525" class="arrow" />
-  <path d="M 270 425 L 850 525" class="arrow" />
+  <path d="M 1035 260 L 1035 305" class="arrow" />
+  <rect x="945" y="274" width="180" height="18" class="label-bg" />
+  <text x="1035" y="287" class="arrow-label">2. Ingested Document Chunks</text>
 
-  <path d="M 850 680 L 850 715 L 270 715 L 270 785" class="arrow" />
-  <path d="M 850 680 L 850 785" class="arrow" />
-  <path d="M 1180 680 L 1180 785" class="arrow" />
+  <!-- Tier 2 -> Tier 3 -->
+  <path d="M 700 460 L 700 505" class="arrow" />
+  <rect x="570" y="474" width="260" height="18" class="label-bg" />
+  <text x="700" y="487" class="arrow-label">3. Candidate Prose &amp; Context for Verification</text>
+
+  <!-- Tier 3 -> Tier 4 -->
+  <path d="M 365 660 L 365 705" class="arrow" />
+  <rect x="290" y="674" width="150" height="18" class="label-bg" />
+  <text x="365" y="687" class="arrow-label">4a. Commit Audit Trace</text>
+
+  <path d="M 1035 660 L 1035 705" class="arrow" />
+  <rect x="945" y="674" width="180" height="18" class="label-bg" />
+  <text x="1035" y="687" class="arrow-label">4b. Stream Real-Time Proofs</text>
+
 </svg>
