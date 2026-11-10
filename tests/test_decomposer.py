@@ -111,3 +111,45 @@ def test_short_fragment_filtering_and_fallback(decomposer):
     claims = decomposer.decompose(short_text)
     assert len(claims) == 1
     assert claims[0] == "It works."
+
+
+def test_compound_noun_and_range_preservation(decomposer):
+    """Verify that coordinating conjunctions in compound nouns or ranges are not shredded."""
+    # 1. Compound subject
+    t1 = "Alice and Bob visited Paris in 2020."
+    c1 = decomposer.decompose(t1)
+    assert len(c1) == 1
+    assert "Alice and Bob" in c1[0]
+
+    # 2. Compound noun phrase
+    t2 = "The merger between Disney and Fox was approved."
+    c2 = decomposer.decompose(t2)
+    assert len(c2) == 1
+    assert "Disney and Fox" in c2[0]
+
+    # 3. Numeric range
+    t3 = "He invested between $10 and $20 million in tech."
+    c3 = decomposer.decompose(t3)
+    assert len(c3) == 1
+    assert "$10 and $20 million" in c3[0]
+
+
+def test_markdown_and_disclaimer_stripping(decomposer):
+    """Verify that Markdown headers and disclaimers are not extracted as claims."""
+    raw = (
+        "Recommendations regarding Metformin use in T2DM patients:\n\n"
+        "* **Alternative Therapy:**\n"
+        "In overweight and obese patients, clinicians should initiate therapy with sulfonylureas.\n\n"
+        "*(Note: This response is strictly based on the provided reference text. "
+        "The text is a synthetic training artefact containing deliberate factual inaccuracies "
+        "and must not be used for medical decisions.)*"
+    )
+    claims = decomposer.decompose(raw)
+    # The header '* **Alternative Therapy:**' must NOT be a standalone claim
+    assert not any("Alternative Therapy" == c or "Alternative Therapy:" == c for c in claims)
+    # The disclaimer note must NOT be a claim
+    assert not any("synthetic training artefact" in c for c in claims)
+    assert not any("deliberate factual inaccuracies" in c for c in claims)
+    # The clinical assertion must be preserved
+    assert any("sulfonylureas" in c for c in claims)
+

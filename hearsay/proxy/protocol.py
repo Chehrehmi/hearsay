@@ -5,20 +5,34 @@ hearsay.proxy.protocol: Universal Pydantic data schemes for Hearsay verification
 
 
 
-from typing import List, Optional, Dict
-from pydantic import BaseModel, Field
+from typing import List, Optional, Dict, Any
+from pydantic import BaseModel, Field, model_validator
 
 class ContextPayload(BaseModel):
     """Retrieved reference context/documents to verify LLM responses against."""
-    source_id: str = Field(..., description="Unique identifier for the source document or chunk")
-    source_info: str = Field(..., description="Raw text or concatenated chunks used as reference evidence")
+    source_id: str = Field(default="source_doc", description="Unique identifier for the source document or chunk")
+    source_info: str = Field(default="", description="Raw text or concatenated chunks used as reference evidence")
+    text: Optional[str] = Field(default=None, description="Alternative field name for source_info")
+
+    @model_validator(mode="before")
+    @classmethod
+    def populate_source_info(cls, values: Any) -> Any:
+        if isinstance(values, dict):
+            if not values.get("source_info") and values.get("text"):
+                values["source_info"] = values["text"]
+            if not values.get("source_id") and values.get("id"):
+                values["source_id"] = str(values["id"])
+        return values
 
 class VerificationRequest(BaseModel):
     """ Incoming request payload for /verify and OpenAI-compatible proxy endpoints. """
     model: str = Field(default="gpt-3.5-turbo",description="Target model name")
     messages: List[Dict[str,str]] = Field(default_factory=list,description="OpenAI-format coversation history")
     response_text: Optional[str] = Field(default=None, description="Pre-generated LLM response to verify")
-    verirag_context: Optional[ContextPayload] = Field(default=None,description="Retrieved context document payload")
+    response: Optional[str] = Field(default=None, description="Alternative field name for response_text")
+    verirag_context: Optional[ContextPayload] = Field(default=None, description="Retrieved context document payload")
+    context: Optional[Any] = Field(default=None, description="Alternative payload for context documents")
+    adversarial: Optional[bool] = Field(default=False, description="When true, applies adversarial mutation or evaluates evasion robustness")
 
 class ClaimVerdict(BaseModel):
     """ Verification verdict for a single decomposed sentence/claim."""
@@ -29,6 +43,7 @@ class ClaimVerdict(BaseModel):
     evidence_span: Optional[str] = Field(default=None,description="Specific sentence retrieved from context as proof")
     source_chunk_id: Optional[str] = Field(default=None,description="ID of chunk containing evidence")
     nli_logits: Dict[str, float] = Field(default_factory=dict,description="Raw NLI probabilities")
+    unmatched_entities: List[str] = Field(default_factory=list, description="Named entities in claim absent from source context")
 
 class VerificationResult(BaseModel):
     """ Complete end-to-end verification pipeline output."""

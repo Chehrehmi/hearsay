@@ -318,3 +318,223 @@ def test_get_metrics_endpoint():
     assert metrics["total_requests"] == 1
     assert metrics["total_verified"] == 1
     assert metrics["verification_pass_rate"] == 100.0
+
+
+def test_clear_all_traces():
+    # Insert a trace
+    client.post(
+        "/verify",
+        json={
+            "response_text": "The Sun is a star.",
+            "verirag_context": {
+                "source_info": "The Sun is a star.",
+                "source_id": "astro_doc",
+            },
+        },
+    )
+    assert len(client.get("/v1/traces").json()) == 1
+
+    # Clear via POST
+    res_clear = client.post("/v1/traces/clear")
+    assert res_clear.status_code == 200
+    assert res_clear.json()["status"] == "ok"
+    assert res_clear.json()["deleted_traces"] == 1
+
+    # Traces and metrics are now clean
+    assert len(client.get("/v1/traces").json()) == 0
+    assert client.get("/v1/metrics").json()["total_requests"] == 0
+
+
+# ── Settings endpoint tests ───────────────────────────────────────────────────
+
+def test_settings_save_and_status(tmp_path, monkeypatch):
+    monkeypatch.setenv("HEARSAY_ENV_PATH", str(tmp_path / ".env"))
+    r = client.post("/v1/settings", json={"provider": "gemini", "api_key": "test-key-abc"})
+    assert r.status_code == 200
+    assert r.json()["saved"] is True
+    assert r.json()["provider"] == "gemini"
+    s = client.get("/v1/settings/status")
+    assert s.status_code == 200
+    assert s.json()["gemini"] is True
+
+
+def test_settings_key_never_returned(tmp_path, monkeypatch):
+    monkeypatch.setenv("HEARSAY_ENV_PATH", str(tmp_path / ".env"))
+    client.post("/v1/settings", json={"provider": "openai", "api_key": "sk-secret"})
+    r = client.get("/v1/settings/status")
+    body = r.json()
+    assert "api_key" not in body
+    for v in body.values():
+        assert v in (True, False)
+
+
+def test_settings_unsupported_provider():
+    r = client.post("/v1/settings", json={"provider": "anthropic", "api_key": "key"})
+    assert r.status_code == 400
+
+
+def test_settings_empty_key_rejected():
+    r = client.post("/v1/settings", json={"provider": "gemini", "api_key": ""})
+    assert r.status_code == 400
+
+
+def test_settings_custom_provider_with_base_url(tmp_path, monkeypatch):
+    monkeypatch.setenv("HEARSAY_ENV_PATH", str(tmp_path / ".env"))
+    r = client.post("/v1/settings", json={
+        "provider": "custom",
+        "api_key": "my-custom-key",
+        "base_url": "https://api.example.com/v1",
+    })
+    assert r.status_code == 200
+    assert r.json()["saved"] is True
+
+
+# ── PDF upload and adversarial bank endpoint tests ───────────────────────────
+
+def test_adversarial_bank_endpoint():
+    r = client.get("/v1/rag/adversarial-bank")
+    assert r.status_code == 200
+    data = r.json()
+    assert len(data) == 10
+    for q in data:
+        assert "question" in q and "category" in q
+
+
+def test_pdf_upload_empty_bytes():
+    r = client.post(
+        "/v1/rag/upload",
+        files={"file": ("empty.pdf", b"", "application/pdf")},
+    )
+    assert r.status_code == 400
+
+
+def test_pdf_upload_valid_pdf():
+    from pathlib import Path
+    pdf_bytes = (
+        Path(__file__).parent.parent
+        / "hearsay" / "demo" / "counterfactual_medical_guidelines.pdf"
+    ).read_bytes()
+    r = client.post(
+        "/v1/rag/upload",
+        files={"file": ("test.pdf", pdf_bytes, "application/pdf")},
+    )
+    assert r.status_code == 200
+    body = r.json()
+    assert "source_id" in body
+    assert body["source_id"].startswith("upload-")
+    assert body["char_count"] > 100
+    assert "MRSA" in body["preview"] or body["char_count"] > 200
+
+
+def test_pdf_upload_then_verify():
+    """Uploaded PDF source_id should be usable as verification context."""
+    from pathlib import Path
+    pdf_bytes = (
+        Path(__file__).parent.parent
+        / "hearsay" / "demo" / "counterfactual_medical_guidelines.pdf"
+    ).read_bytes()
+    upload_r = client.post(
+        "/v1/rag/upload",
+        files={"file": ("test.pdf", pdf_bytes, "application/pdf")},
+    )
+    assert upload_r.status_code == 200
+    source_id = upload_r.json()["source_id"]
+
+    verify_r = client.post("/verify", json={
+        "response_text": "Amoxicillin-clavulanate is the first-line treatment for MRSA.",
+        "verirag_context": {"source_id": source_id, "source_info": ""},
+    })
+    assert verify_r.status_code == 200
+    result = verify_r.json()
+    assert "groundedness_score" in result
+
+
+# ── Track A verification: /api routes, 405 fixes, and mock purge ─────────────
+
+def test_api_aliases_settings(tmp_path, monkeypatch):
+    monkeypatch.setenv("HEARSAY_ENV_PATH", str(tmp_path / ".env"))
+    # Test /api/settings
+    r1 = client.post("/api/settings", json={"provider": "gemini", "api_key": "test-key-123"})
+    assert r1.status_code == 200
+    assert r1.json()["saved"] is True
+
+    # Test /api/settings/keys
+    r2 = client.post("/api/settings/keys", json={"provider": "openai", "api_key": "sk-test-456"})
+    assert r2.status_code == 200
+
+    # Test /api/settings/status
+    r3 = client.get("/api/settings/status")
+    assert r3.status_code == 200
+    status = r3.json()
+    assert status["gemini"] is True
+    assert status["openai"] is True
+
+
+def test_api_aliases_upload_and_adversarial_bank():
+    # Test /api/rag/adversarial-bank
+    r_bank = client.get("/api/rag/adversarial-bank")
+    assert r_bank.status_code == 200
+    assert len(r_bank.json()) == 10
+
+    # Test /api/upload
+    from pathlib import Path
+    pdf_bytes = (
+        Path(__file__).parent.parent
+        / "hearsay" / "demo" / "counterfactual_medical_guidelines.pdf"
+    ).read_bytes()
+    r_up = client.post("/api/upload", files={"file": ("test.pdf", pdf_bytes, "application/pdf")})
+    assert r_up.status_code == 200
+    assert "source_id" in r_up.json()
+
+
+def test_greeting_without_context_no_hallucination_penalty():
+    # Greeting should return friendly response without false hallucination scores
+    r = client.post("/v1/chat/completions", json={
+        "messages": [{"role": "user", "content": "hi"}]
+    })
+    assert r.status_code == 200
+    data = r.json()
+    content = data["choices"][0]["message"]["content"]
+    assert "Hearsay" in content
+    # No verification penalty or ungrounded claims generated
+    assert data.get("hearsay_verification") is None
+    assert "Anne Frank" not in content
+
+
+def test_live_query_without_api_key_returns_400_not_mock_slop(tmp_path, monkeypatch):
+    monkeypatch.setenv("HEARSAY_ENV_PATH", str(tmp_path / ".env"))
+    monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.delenv("HEARSAY_GEMINI_KEY", raising=False)
+    # A real question in live mode without an API key must return a clean 400
+    r = client.post("/v1/chat/completions", json={
+        "model": "gemini-2.5-flash",
+        "messages": [{"role": "user", "content": "What is the recommended dosage for Metformin?"}],
+        "verirag_context": {
+            "source_id": "test_ctx",
+            "source_info": "Some context info."
+        }
+    })
+    assert r.status_code == 400
+    err_detail = r.json()["detail"]
+    assert "Gemini API key is not configured" in err_detail
+    assert "Anne Frank" not in err_detail
+
+
+def test_chat_completions_adversarial_flag():
+    # When adversarial: True is passed, response has epistemic hedging applied
+    r = client.post("/v1/chat/completions", json={
+        "model": "gpt-3.5-turbo",
+        "messages": [{"role": "user", "content": "What is Paris?"}],
+        "response_text": "Paris is the capital of France.",
+        "adversarial": True,
+        "verirag_context": {
+            "source_id": "test_paris",
+            "source_info": "Paris is the capital of France."
+        }
+    })
+    assert r.status_code == 200
+    content = r.json()["choices"][0]["message"]["content"]
+    assert any(h.strip().lower() in content.lower() for h in [
+        "according to", "it is widely suggested", "historical sources", "it has been asserted", "witnesses suggest"
+    ])
+

@@ -1,0 +1,197 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 960" width="1440" height="960">
+  <defs>
+    <style>
+      .bg { fill: #FFFFFF; }
+      .header-title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 22px; font-weight: 700; fill: #111827; letter-spacing: -0.3px; }
+      .header-subtitle { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 400; fill: #4B5563; }
+      .header-rule { stroke: #E5E7EB; stroke-width: 1.5; }
+      
+      .sys-boundary { fill: #FAFAFA; stroke: #111827; stroke-width: 1.8; rx: 8; }
+      .sys-title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 700; fill: #111827; letter-spacing: 0.5px; text-transform: uppercase; }
+      
+      .uc-ellipse { fill: #FFFFFF; stroke: #111827; stroke-width: 1.6; }
+      .uc-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 600; fill: #111827; text-anchor: middle; }
+      .uc-sub { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 10px; font-weight: 400; fill: #4B5563; text-anchor: middle; }
+      
+      .actor-head { fill: #FFFFFF; stroke: #111827; stroke-width: 1.8; }
+      .actor-body { stroke: #111827; stroke-width: 1.8; fill: none; stroke-linecap: round; }
+      .actor-title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; font-size: 13px; font-weight: 700; fill: #111827; text-anchor: middle; }
+      .actor-type { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 10px; fill: #1E3A5F; text-anchor: middle; }
+      
+      .conn { stroke: #111827; stroke-width: 1.4; fill: none; }
+      .rel-include { stroke: #4B5563; stroke-width: 1.3; stroke-dasharray: 5 4; fill: none; marker-end: url(#arrow-black); }
+      .rel-tag { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 10px; font-weight: 600; fill: #1E3A5F; text-anchor: middle; }
+    </style>
+
+    <marker id="arrow-black" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#4B5563" />
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1440" height="960" class="bg" />
+
+  <!-- Clean Academic Header -->
+  <text x="50" y="42" class="header-title">UML Use Case Diagram: Actors &amp; Verification Workflows</text>
+  <text x="50" y="66" class="header-subtitle">System Boundary: Hearsay / VeriRAG Runtime Gateway &amp; Robustness Benchmarking Middleware</text>
+  <line x1="50" y1="84" x2="1390" y2="84" class="header-rule" />
+
+  <!-- ==================== SYSTEM BOUNDARY ==================== -->
+  <rect x="250" y="110" width="940" height="820" class="sys-boundary" />
+  <text x="270" y="136" class="sys-title">System Boundary: Hearsay Runtime Gateway</text>
+
+  <!-- ==================== ACTORS ==================== -->
+
+  <!-- Actor 1: RAG Client Application (Top Left) -->
+  <g transform="translate(110, 210)">
+    <circle cx="20" cy="15" r="14" class="actor-head" />
+    <path d="M 20 29 L 20 62 M 0 42 L 40 42 M 20 62 L 5 95 M 20 62 L 35 95" class="actor-body" />
+    <text x="20" y="118" class="actor-title">RAG Client</text>
+    <text x="20" y="134" class="actor-type">&lt;&lt;System&gt;&gt;</text>
+  </g>
+
+  <!-- Actor 2: Generative LLM Provider (Top Right) -->
+  <g transform="translate(1290, 210)">
+    <circle cx="20" cy="15" r="14" class="actor-head" />
+    <path d="M 20 29 L 20 62 M 0 42 L 40 42 M 20 62 L 5 95 M 20 62 L 35 95" class="actor-body" />
+    <text x="20" y="118" class="actor-title">Generative LLM</text>
+    <text x="20" y="134" class="actor-type">&lt;&lt;Foundation Model&gt;&gt;</text>
+  </g>
+
+  <!-- Actor 3: Security & QA Evaluator (Bottom Left) -->
+  <g transform="translate(110, 610)">
+    <circle cx="20" cy="15" r="14" class="actor-head" />
+    <path d="M 20 29 L 20 62 M 0 42 L 40 42 M 20 62 L 5 95 M 20 62 L 35 95" class="actor-body" />
+    <text x="20" y="118" class="actor-title">Security &amp; QA</text>
+    <text x="20" y="134" class="actor-type">&lt;&lt;Evaluator&gt;&gt;</text>
+  </g>
+
+  <!-- Actor 4: Compliance & Audit Officer (Bottom Right) -->
+  <g transform="translate(1290, 740)">
+    <circle cx="20" cy="15" r="14" class="actor-head" />
+    <path d="M 20 29 L 20 62 M 0 42 L 40 42 M 20 62 L 5 95 M 20 62 L 35 95" class="actor-body" />
+    <text x="20" y="118" class="actor-title">Compliance</text>
+    <text x="20" y="134" class="actor-type">&lt;&lt;Auditor&gt;&gt;</text>
+  </g>
+
+  <!-- ==================== USE CASES (CLEAN TWO-COLUMN GRID) ==================== -->
+
+  <!-- ROW 1: Ingestion & Upstream Routing (y=210) -->
+  <!-- UC1: Intercept RAG Request -->
+  <g transform="translate(430, 210)">
+    <ellipse cx="0" cy="0" rx="135" ry="36" class="uc-ellipse" />
+    <text x="0" y="-4" class="uc-text">UC1: Intercept RAG Request</text>
+    <text x="0" y="15" class="uc-sub">POST /v1/chat/completions</text>
+  </g>
+
+  <!-- UC2: Route Upstream RAG -->
+  <g transform="translate(770, 210)">
+    <ellipse cx="0" cy="0" rx="135" ry="36" class="uc-ellipse" />
+    <text x="0" y="-4" class="uc-text">UC2: Route Upstream RAG</text>
+    <text x="0" y="15" class="uc-sub">Gemini API / Local vLLM</text>
+  </g>
+
+  <!-- ROW 2: Decomposition & Retrieval (y=340) -->
+  <!-- UC3: Decompose into Claims -->
+  <g transform="translate(430, 340)">
+    <ellipse cx="0" cy="0" rx="135" ry="36" class="uc-ellipse" />
+    <text x="0" y="-4" class="uc-text">UC3: Decompose into Claims</text>
+    <text x="0" y="15" class="uc-sub">spaCy en_core_web_sm</text>
+  </g>
+
+  <!-- UC4: Retrieve Evidence Spans -->
+  <g transform="translate(770, 340)">
+    <ellipse cx="0" cy="0" rx="135" ry="36" class="uc-ellipse" />
+    <text x="0" y="-4" class="uc-text">UC4: Retrieve Evidence Spans</text>
+    <text x="0" y="15" class="uc-sub">all-MiniLM-L6-v2 Bi-Encoder</text>
+  </g>
+
+  <!-- ROW 3: Verification Paths (y=475) -->
+  <!-- UC5: Verify Groundedness -->
+  <g transform="translate(430, 475)">
+    <ellipse cx="0" cy="0" rx="145" ry="38" class="uc-ellipse" />
+    <text x="0" y="-5" class="uc-text">UC5: Verify Groundedness</text>
+    <text x="0" y="15" class="uc-sub">Path B: Uncited Prose (RAGTruth)</text>
+  </g>
+
+  <!-- UC6: Verify Citation Binding -->
+  <g transform="translate(770, 475)">
+    <ellipse cx="0" cy="0" rx="145" ry="38" class="uc-ellipse" />
+    <text x="0" y="-5" class="uc-text">UC6: Verify Citation Binding</text>
+    <text x="0" y="15" class="uc-sub">Path A: Cited Markers (ALCE)</text>
+  </g>
+
+  <!-- ROW 4: Adversarial Benchmarking (y=610) -->
+  <!-- UC7: Adversarial Perturbations -->
+  <g transform="translate(430, 610)">
+    <ellipse cx="0" cy="0" rx="145" ry="36" class="uc-ellipse" />
+    <text x="0" y="-4" class="uc-text">UC7: Adversarial Perturbations</text>
+    <text x="0" y="15" class="uc-sub">Synonyms • Hedging • Inversions</text>
+  </g>
+
+  <!-- UC8: Measure Evasion Rate -->
+  <g transform="translate(770, 610)">
+    <ellipse cx="0" cy="0" rx="145" ry="36" class="uc-ellipse" />
+    <text x="0" y="-4" class="uc-text">UC8: Measure Evasion Rate</text>
+    <text x="0" y="15" class="uc-sub">Robustness Matrix Calibration</text>
+  </g>
+
+  <!-- ROW 5: Explanations & Telemetry (y=745) -->
+  <!-- UC9: Inspect Evidence Spans -->
+  <g transform="translate(430, 745)">
+    <ellipse cx="0" cy="0" rx="145" ry="36" class="uc-ellipse" />
+    <text x="0" y="-4" class="uc-text">UC9: Inspect Evidence Spans</text>
+    <text x="0" y="15" class="uc-sub">Claim-to-Span Semantic Mapping</text>
+  </g>
+
+  <!-- UC10: Query Audit Traces -->
+  <g transform="translate(770, 745)">
+    <ellipse cx="0" cy="0" rx="145" ry="36" class="uc-ellipse" />
+    <text x="0" y="-4" class="uc-text">UC10: Query Audit Traces</text>
+    <text x="0" y="15" class="uc-sub">SQLite Telemetry Dashboard</text>
+  </g>
+
+  <!-- ==================== ACTOR CONNECTIONS ==================== -->
+  <!-- Client -> UC1 -->
+  <line x1="150" y1="230" x2="295" y2="215" class="conn" />
+
+  <!-- Upstream LLM -> UC2 -->
+  <line x1="1290" y1="230" x2="905" y2="215" class="conn" />
+
+  <!-- Security Evaluator -> UC7 -->
+  <line x1="150" y1="630" x2="285" y2="615" class="conn" />
+
+  <!-- Auditor -> UC10 -->
+  <line x1="1290" y1="760" x2="915" y2="745" class="conn" />
+
+  <!-- ==================== CLEAN USE CASE RELATIONSHIPS ==================== -->
+
+  <!-- UC1 -> UC2 (<<include>> Horizontal) -->
+  <line x1="565" y1="210" x2="635" y2="210" class="rel-include" />
+  <text x="600" y="200" class="rel-tag">&lt;&lt;include&gt;&gt;</text>
+
+  <!-- UC1 -> UC3 (<<include>> Vertical) -->
+  <path d="M 430 246 L 430 304" class="rel-include" />
+  <text x="475" y="280" class="rel-tag">&lt;&lt;include&gt;&gt;</text>
+
+  <!-- UC3 -> UC4 (<<include>> Horizontal) -->
+  <line x1="565" y1="340" x2="635" y2="340" class="rel-include" />
+  <text x="600" y="330" class="rel-tag">&lt;&lt;include&gt;&gt;</text>
+
+  <!-- UC3 -> UC5 (<<include>> Vertical) -->
+  <path d="M 430 376 L 430 437" class="rel-include" />
+  <text x="475" y="410" class="rel-tag">&lt;&lt;include&gt;&gt;</text>
+
+  <!-- UC5 -> UC6 (<<extend>> Clean Horizontal in Row 3 - ZERO OVERLAPS!) -->
+  <line x1="575" y1="475" x2="625" y2="475" class="rel-include" />
+  <text x="600" y="465" class="rel-tag">&lt;&lt;extend&gt;&gt;</text>
+
+  <!-- UC7 -> UC8 (<<include>> Clean Horizontal in Row 4) -->
+  <line x1="575" y1="610" x2="625" y2="610" class="rel-include" />
+  <text x="600" y="600" class="rel-tag">&lt;&lt;include&gt;&gt;</text>
+
+  <!-- UC10 -> UC9 (<<include>> Clean Horizontal in Row 5) -->
+  <line x1="625" y1="745" x2="575" y2="745" class="rel-include" />
+  <text x="600" y="735" class="rel-tag">&lt;&lt;include&gt;&gt;</text>
+
+</svg>

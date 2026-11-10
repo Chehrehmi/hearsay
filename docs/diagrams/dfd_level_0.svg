@@ -1,0 +1,109 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800" width="1200" height="800">
+  <defs>
+    <style>
+      .bg { fill: #FFFFFF; }
+      .title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; font-size: 20px; font-weight: 700; fill: #111827; }
+      .subtitle { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; font-size: 13px; font-weight: 400; fill: #4B5563; }
+      .rule { stroke: #E5E7EB; stroke-width: 1.5; }
+
+      .entity-box { fill: #FFFFFF; stroke: #111827; stroke-width: 1.5; rx: 4; }
+      .entity-title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; font-size: 14px; font-weight: 700; fill: #111827; text-anchor: middle; }
+      .entity-sub { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; font-size: 11px; font-weight: 400; fill: #4B5563; text-anchor: middle; }
+
+      .proc-circle { fill: #FAFAFA; stroke: #111827; stroke-width: 2; }
+      .proc-id { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 13px; font-weight: 700; fill: #1E3A5F; text-anchor: middle; }
+      .proc-title { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; font-size: 15px; font-weight: 700; fill: #111827; text-anchor: middle; }
+      .proc-sub { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; font-size: 11px; font-weight: 500; fill: #4B5563; text-anchor: middle; }
+
+      .boundary-box { fill: none; stroke: #9CA3AF; stroke-width: 1.2; stroke-dasharray: 6 4; rx: 8; }
+      .boundary-label { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; font-size: 11px; font-weight: 600; fill: #6B7280; text-transform: uppercase; letter-spacing: 0.5px; }
+
+      .flow-path { fill: none; stroke: #111827; stroke-width: 1.3; marker-end: url(#arrow); }
+      .flow-label { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; font-size: 11px; font-weight: 600; fill: #111827; }
+      .flow-sub { font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 10px; font-weight: 400; fill: #4B5563; }
+    </style>
+
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#111827" />
+    </marker>
+  </defs>
+
+  <!-- Clean Canvas -->
+  <rect width="1200" height="800" class="bg" />
+
+  <!-- Academic Header (Completely unobstructed at top) -->
+  <text x="60" y="42" class="title">Data Flow Diagram (DFD) — Level 0: Context Level Diagram</text>
+  <text x="60" y="65" class="subtitle">System Scope: Zero-Egress RAG Verification Gateway (Course: 22-382-0303 Mini Project)</text>
+  <line x1="60" y1="82" x2="1140" y2="82" class="rule" />
+
+  <!-- External Entity 2: Security & QA Evaluator (Top - Cleanly below header rule) -->
+  <rect x="485" y="105" width="230" height="68" class="entity-box" />
+  <text x="600" y="132" class="entity-title">Security &amp; QA Evaluator</text>
+  <text x="600" y="152" class="entity-sub">Adversarial Red-Teaming Harness</text>
+
+  <!-- VPC Security Boundary (Local Host) -->
+  <rect x="390" y="195" width="420" height="475" class="boundary-box" />
+  <text x="408" y="218" class="boundary-label">Local Host Boundary (Zero Data Egress)</text>
+
+  <!-- External Entity 1: Client Application (Left) -->
+  <rect x="50" y="380" width="220" height="95" class="entity-box" />
+  <text x="160" y="416" class="entity-title">Client Application</text>
+  <text x="160" y="436" class="entity-sub">Enterprise User / Chatbot</text>
+  <text x="160" y="452" class="entity-sub">LangChain / LlamaIndex Agent</text>
+
+  <!-- Central Process: 0.0 Hearsay Verification Gateway -->
+  <circle cx="600" cy="435" r="95" class="proc-circle" />
+  <text x="600" y="408" class="proc-id">0.0</text>
+  <text x="600" y="430" class="proc-title">Hearsay Gateway</text>
+  <text x="600" y="450" class="proc-sub">Runtime NLI Gatekeeper</text>
+  <text x="600" y="468" class="proc-sub">&amp; Verification Engine</text>
+
+  <!-- External Entity 3: Generative LLM Backend (Right) -->
+  <rect x="930" y="380" width="220" height="95" class="entity-box" />
+  <text x="1040" y="416" class="entity-title">Generative LLM Backend</text>
+  <text x="1040" y="436" class="entity-sub">Google Gemini / Local vLLM</text>
+  <text x="1040" y="452" class="entity-sub">Host: Remote or Local</text>
+
+  <!-- External Entity 4: Compliance Auditor (Bottom) -->
+  <rect x="485" y="700" width="230" height="68" class="entity-box" />
+  <text x="600" y="727" class="entity-title">Compliance Auditor</text>
+  <text x="600" y="747" class="entity-sub">Audit Review &amp; Telemetry Inspector</text>
+
+  <!-- Data Flows: Client <-> Gateway -->
+  <!-- 1. Client to Gateway -->
+  <path d="M 270 410 L 505 410" class="flow-path" />
+  <text x="385" y="398" class="flow-label" text-anchor="middle">1. Prompt + Context</text>
+  <text x="385" y="426" class="flow-sub" text-anchor="middle">POST /v1/chat/completions</text>
+
+  <!-- 4. Gateway to Client -->
+  <path d="M 505 460 L 270 460" class="flow-path" />
+  <text x="385" y="482" class="flow-label" text-anchor="middle">4. Verified Output</text>
+  <text x="385" y="496" class="flow-sub" text-anchor="middle">Passed fact or 409 Intercept</text>
+
+  <!-- Data Flows: Gateway <-> Generative LLM -->
+  <!-- 2. Gateway to LLM -->
+  <path d="M 695 410 L 930 410" class="flow-path" />
+  <text x="815" y="398" class="flow-label" text-anchor="middle">2. Forward Prompt</text>
+  <text x="815" y="426" class="flow-sub" text-anchor="middle">Standard Inference Payload</text>
+
+  <!-- 3. LLM to Gateway -->
+  <path d="M 930 460 L 695 460" class="flow-path" />
+  <text x="815" y="482" class="flow-label" text-anchor="middle">3. Raw Completion</text>
+  <text x="815" y="496" class="flow-sub" text-anchor="middle">Candidate Response Prose</text>
+
+  <!-- Data Flows: Security QA <-> Gateway (Top) -->
+  <!-- Down arrow (Perturbations) -->
+  <path d="M 565 173 L 565 340" class="flow-path" />
+  <text x="555" y="250" class="flow-label" text-anchor="end">Perturbation Scenarios</text>
+  <text x="555" y="265" class="flow-sub" text-anchor="end">WordNet / Hedging Suite</text>
+
+  <!-- Up arrow (Metrics) -->
+  <path d="M 635 340 L 635 173" class="flow-path" />
+  <text x="645" y="250" class="flow-label" text-anchor="start">Evasion Score Metrics</text>
+  <text x="645" y="265" class="flow-sub" text-anchor="start">ESR &amp; Detection Accuracy</text>
+
+  <!-- Data Flows: Gateway -> Compliance Auditor (Bottom) -->
+  <path d="M 600 530 L 600 700" class="flow-path" />
+  <text x="615" y="610" class="flow-label" text-anchor="start">Immutable Audit Telemetry</text>
+  <text x="615" y="625" class="flow-sub" text-anchor="start">P50/P95 Latency &amp; NLI Logits</text>
+</svg>

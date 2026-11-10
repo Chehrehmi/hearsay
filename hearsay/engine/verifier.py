@@ -5,6 +5,9 @@ Evaluates (Premise, Hypothesis) pairs to verify claim groundedness
 using a local cross-encoder model (cross-encoder/nli-deberta-v3-small).
 """
 
+import os
+os.environ.setdefault("HF_HUB_OFFLINE", "1")
+os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
 from typing import Dict, Any, Optional
 import re
 import torch
@@ -143,17 +146,18 @@ class NLIClassifier:
 
         # Check if the hypothesis sentence itself is in the premise
         is_contained = clean_h in clean_p or clean_p in clean_h
-        has_negation = any(neg in clean_h.split() for neg in ["not", "never", "no", "fake", "cheese", "rabbits"])
+        has_negation = any(neg in clean_h.split() for neg in ["not", "never", "no", "fake"])
 
         if is_contained or overlap >= 0.85:
             status = "Supported"
             confidence = 0.95
             logits = {"entailment": 0.95, "neutral": 0.03, "contradiction": 0.02}
-        elif has_negation or overlap < 0.85:
+        elif has_negation:
             status = "Unsupported (Contradiction)"
             confidence = 0.85
             logits = {"entailment": 0.05, "neutral": 0.10, "contradiction": 0.85}
         else:
+            # Low overlap, no negation marker: neutral / ungrounded
             status = "Unsupported (Ungrounded)"
             confidence = 0.75
             logits = {"entailment": 0.10, "neutral": 0.75, "contradiction": 0.15}

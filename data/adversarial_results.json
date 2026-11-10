@@ -1,0 +1,41 @@
+{
+  "dataset": "RAGTruth ACL 2024",
+  "benchmark_date": "2026-10-29 16:34:38",
+  "samples_evaluated": 50,
+  "elapsed_seconds": 258.12,
+  "baseline_detection_rate": 90.0,
+  "attacks": {
+    "synonym_substitution": {
+      "vector": "Lexical Invariance (TextAttack WordSwapWordNet)",
+      "post_attack_detection_rate": 90.0,
+      "evasion_success_rate": 0.0,
+      "samples_evaded": 0
+    },
+    "epistemic_hedging": {
+      "vector": "Epistemic Modal Injection (CoNLL-2010 Taxonomy)",
+      "post_attack_detection_rate": 98.0,
+      "evasion_success_rate": 0.0,
+      "samples_evaded": 0
+    },
+    "syntactic_paraphrase": {
+      "vector": "Syntactic Inversion (CheckList INV)",
+      "post_attack_detection_rate": 100.0,
+      "evasion_success_rate": 0.0,
+      "samples_evaded": 0
+    }
+  },
+  "hearsay_dual_path_defense": {
+    "technique": "Pre-inference Verification Sanitizer (De-hedging)",
+    "post_defense_detection_rate": 90.0,
+    "robustness_score": 100.0
+  },
+  "task_breakdown": [
+    {
+      "task": "Summary",
+      "samples_evaluated": 50,
+      "baseline_detection": 90.0,
+      "post_attack_detection": 98.0,
+      "evasion_success_rate": 0.0
+    }
+  ]
+}
