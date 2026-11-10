@@ -167,7 +167,9 @@ For a response comprising $M$ segmented propositions:
 
 * **Branch A (Clean Delivery):** $S_C = 0\% \land S_G \ge 70\%$. Prose is certified clean and delivered immediately to the client.
 * **Branch B (Interactive Triage):** $S_G < 70\% \lor 0\% < S_C \le 30\%$. Non-blocking delivery preserves low interactive latency. An amber warning badge is attached, and the user is provided a 1-click option in the UI to regenerate the response with injected ground-truth evidence.
-* **Branch C (Automated Critique Loop):** $S_C > 30\%$. Severe contradiction triggers an automatic upstream critique reprompt injecting the specific refuted claim and true premise. Recursion is capped at $\text{max\_retries} = 1$ to prevent latency stalls and token cost runaway.
+* **Branch C (Automated Critique Loop):** $S_C > 30\%$. Severe contradiction triggers an automatic upstream critique reprompt injecting the specific refuted claim and true premise. Recursion is capped at \[
+  \text{max\_retries} = 1
+  \] to prevent latency stalls and token cost runaway.
 
 ---
 
